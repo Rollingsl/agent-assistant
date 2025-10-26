@@ -1,0 +1,17 @@
+# LLM Integration
+litellm==1.81.16
+langchain==0.1.13
+openai>=2.8.0
+# Web / UI Interface (Standalone Mode)
+fastapi==0.110.0
+uvicorn==0.28.0
+pydantic==2.6.4
+
+# Messaging (Optional External Communication)
+python-telegram-bot==20.8
+
+# Call Handling Placeholder (Twilio)
+twilio==9.0.2
+
+# Utilities
+python-dotenv==1.0.1

@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  assistant:
+    build: .
+    container_name: basic_assistant
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Mount a local directory to persist memory or SQLite databases
+      - ./data:/app/data
