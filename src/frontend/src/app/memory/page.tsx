@@ -34,32 +34,36 @@ export default function MemoryBank() {
     }
 
     return (
-        <div className="flex flex-col h-full p-8 animate-[fadeIn_0.5s_ease]">
-            <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4">
+        <div className="flex flex-col h-full p-10 animate-[fadeIn_0.5s_ease]">
+            <div className="mb-8 flex justify-between items-end border-b border-white/10 pb-6 shrink-0">
                 <div>
-                    <h2 className="text-3xl font-semibold m-0 flex items-center gap-3">
-                        <i className="fa-solid fa-brain text-[#6c5ce7]"></i> Memory Directives
+                    <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide">
+                        <i className="fa-solid fa-brain text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i> Memory Directives
                     </h2>
-                    <p className="text-gray-400 mt-2 max-w-2xl">This neural vault stores your long-term context, boundaries, and learned preferences. The autonomous agent integrates these instructions before equipping any skill or executing any task.</p>
+                    <p className="text-gray-400 mt-4 max-w-2xl text-lg leading-relaxed">This neural vault stores your long-term context, boundaries, and learned preferences. Atlas integrates these instructions before equipping any skill or executing any subroutine.</p>
                 </div>
 
                 <button
                     onClick={handleSave}
-                    className={`px-6 py-2.5 font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(108,92,231,0.3)] flex items-center gap-2 ${isSaving ? 'bg-[#00cec9] text-black shadow-[0_4px_15px_rgba(0,206,201,0.5)]' : 'bg-[#6c5ce7] text-white hover:bg-[#a29bfe]'}`}
+                    className={`px-8 py-3.5 font-bold uppercase tracking-widest text-sm rounded transition-all shadow-lg flex items-center gap-3 border ${isSaving
+                            ? 'bg-[#10a37f] border-[#10a37f] text-black shadow-[0_0_20px_rgba(16,163,127,0.5)]'
+                            : 'bg-black/50 border-[#00f2fe]/50 text-[#00f2fe] hover:bg-[#00f2fe]/10 hover:border-[#00f2fe] hover:shadow-[0_0_25px_rgba(0,242,254,0.3)]'
+                        }`}
                 >
-                    {isSaving ? <><i className="fa-solid fa-check"></i> Engram Synced</> : <><i className="fa-solid fa-download"></i> Commit to Memory</>}
+                    {isSaving ? <><i className="fa-solid fa-check text-lg"></i> Engram Synced</> : <><i className="fa-solid fa-download text-lg"></i> Commit to Memory</>}
                 </button>
             </div>
 
-            <div className="flex-grow flex flex-col relative group">
+            <div className="flex-grow flex flex-col relative group pb-4">
                 <textarea
                     value={memoryContent}
                     onChange={(e) => setMemoryContent(e.target.value)}
-                    className="flex-grow w-full bg-black/40 border border-white/10 p-6 text-lg font-mono text-[#f5f6fa] rounded-2xl outline-none focus:border-[#6c5ce7] resize-none hide-scrollbar transition-colors"
+                    className="flex-grow w-full bg-black/40 border border-white/5 p-8 text-lg font-mono text-[#f8f9fa] rounded-2xl outline-none focus:border-[#00f2fe]/50 resize-none hide-scrollbar transition-all leading-loose shadow-inner"
                     placeholder="Enter cross-session constraints or rules here..."
+                    spellCheck="false"
                 />
-                <div className="absolute right-4 bottom-4 text-xs text-gray-500 font-bold uppercase tracking-widest bg-black/50 px-2 py-1 rounded">
-                    memory.md
+                <div className="absolute right-8 bottom-10 text-[11px] text-[#00f2fe] font-bold uppercase tracking-widest bg-[#00f2fe]/10 border border-[#00f2fe]/20 px-3 py-1.5 rounded-md backdrop-blur-sm">
+                    sys/memory.md
                 </div>
             </div>
         </div>

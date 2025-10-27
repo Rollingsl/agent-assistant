@@ -22,15 +22,12 @@ export default function Dashboard() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
 
-  // This is a simplified version; in a real app, Sidebar would pass the activeTask via Context or URL params.
-  // We'll fetch the most recently active task instead.
   useEffect(() => {
     const fetchLatest = async () => {
       try {
         const res = await fetch('http://localhost:8000/api/tasks')
         const data = await res.json()
         if (data.tasks && data.tasks.length > 0) {
-          // If no active task selected, pick the first
           if (!activeTask) setActiveTask(data.tasks[0])
         }
       } catch (e) { }
@@ -59,45 +56,48 @@ export default function Dashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: "ACTION: APPROVED", is_approval: true })
     });
-    // Optimistic update handled by polling
   }
 
   if (!activeTask) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center text-gray-500 gap-4">
-        <i className="fa-solid fa-satellite-dish text-6xl opacity-50"></i>
-        <h2 className="text-2xl font-semibold">No Task Selected</h2>
-        <p>Select an ongoing operation from the sidebar, or delegate a new one.</p>
+        <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-4">
+          <i className="fa-solid fa-satellite-dish text-4xl opacity-50"></i>
+        </div>
+        <h2 className="text-2xl font-bold text-white tracking-wide">No Task Selected</h2>
+        <p className="text-gray-400">Select an ongoing operation from the sidebar, or delegate a new one.</p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full animate-[fadeIn_0.8s_ease]">
+    <div className="flex flex-col h-full animate-[fadeIn_0.5s_ease]">
       {/* Header */}
-      <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-        <h2 className="text-xl font-semibold flex items-center gap-3">
-          <i className="fa-solid fa-microchip text-[#6c5ce7]"></i> {activeTask.title}
+      <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-black/40 backdrop-blur-md sticky top-0 z-10">
+        <h2 className="text-xl font-bold flex items-center gap-3 tracking-wide text-white">
+          <i className="fa-solid fa-microchip text-[#00f2fe] drop-shadow-[0_0_8px_rgba(0,242,254,0.6)]"></i> {activeTask.title}
         </h2>
-        <span className="text-gray-400 font-mono text-sm py-1 px-3 bg-white/5 rounded-lg border border-white/10">ID: OP-{activeTask.id}</span>
+        <span className="text-[#00f2fe] font-mono text-xs font-bold tracking-widest py-1.5 px-3 bg-[#00f2fe]/10 rounded border border-[#00f2fe]/30">ID: OP-{activeTask.id}</span>
       </div>
 
       {/* Message List */}
-      <div className="flex-grow overflow-y-auto hide-scrollbar p-6 flex flex-col gap-6">
+      <div className="flex-grow overflow-y-auto hide-scrollbar p-8 flex flex-col gap-6">
         {messages.map((m, i) => (
           <div key={i} className={`flex w-full items-end ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[75%] p-4 rounded-2xl whitespace-pre-wrap shadow-lg ${m.sender === 'user' ? 'bg-[#6c5ce7]/80 rounded-br-sm' : 'bg-[#2f3542]/80 rounded-bl-sm'
+            <div className={`max-w-[75%] px-6 py-4 rounded-2xl whitespace-pre-wrap leading-relaxed ${m.sender === 'user'
+                ? 'bg-gradient-to-r from-[#00f2fe]/10 to-[#4facfe]/20 border border-[#00f2fe]/30 text-white rounded-br-sm shadow-[0_4px_20px_rgba(0,242,254,0.05)]'
+                : 'bg-white/5 border border-white/10 text-gray-200 rounded-bl-sm drop-shadow-md backdrop-blur-sm'
               }`}>
               {m.content}
 
               {m.is_approval_request && (
-                <div className="mt-4 p-5 bg-[#f39c12]/15 border border-[#f39c12] rounded-xl flex flex-col gap-3">
-                  <h4 className="text-[#f39c12] font-semibold m-0 flex items-center gap-2">
+                <div className="mt-5 p-6 bg-[#f39c12]/10 border border-[#f39c12]/50 rounded-xl flex flex-col gap-4 shadow-[0_0_15px_rgba(243,156,18,0.1)]">
+                  <h4 className="text-[#f39c12] font-bold text-sm tracking-widest uppercase m-0 flex items-center gap-2">
                     <i className="fa-solid fa-triangle-exclamation"></i> ACTION REQUIRED
                   </h4>
-                  <p className="text-sm">To proceed with background execution, please review and grant cryptographic override.</p>
-                  <button onClick={approveAction} className="self-start mt-2 px-6 py-2.5 bg-[#00cec9] text-black font-extrabold rounded-lg hover:scale-105 transition-transform shadow-[0_0_15px_rgba(0,206,201,0.4)]">
-                    <i className="fa-solid fa-fingerprint mr-2"></i> Grant Execution Override
+                  <p className="text-sm text-gray-300">To proceed with background execution, please review and grant cryptographic override.</p>
+                  <button onClick={approveAction} className="self-start mt-2 px-6 py-2.5 bg-gradient-to-r from-[#f39c12] to-[#e67e22] text-black font-bold uppercase tracking-wider text-xs rounded shadow-[0_0_15px_rgba(243,156,18,0.4)] hover:shadow-[0_0_25px_rgba(243,156,18,0.6)] hover:scale-105 transition-all">
+                    <i className="fa-solid fa-fingerprint mr-2 text-sm"></i> Grant Execution Override
                   </button>
                 </div>
               )}
