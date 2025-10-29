@@ -25,7 +25,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchLatest = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/tasks')
+        const res = await fetch('/api/tasks')
         const data = await res.json()
         if (data.tasks && data.tasks.length > 0) {
           if (!activeTask) setActiveTask(data.tasks[0])
@@ -39,7 +39,7 @@ export default function Dashboard() {
     if (!activeTask) return;
     const fetchMsgs = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/tasks/${activeTask.id}/messages`)
+        const res = await fetch(`/api/tasks/${activeTask.id}/messages`)
         const data = await res.json()
         setMessages(data.messages || [])
       } catch (e) { }
@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   const approveAction = async () => {
     if (!activeTask) return;
-    await fetch(`http://localhost:8000/api/tasks/${activeTask.id}/messages`, {
+    await fetch(`/api/tasks/${activeTask.id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: "ACTION: APPROVED", is_approval: true })
@@ -85,8 +85,8 @@ export default function Dashboard() {
         {messages.map((m, i) => (
           <div key={i} className={`flex w-full items-end ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] px-6 py-4 rounded-2xl whitespace-pre-wrap leading-relaxed ${m.sender === 'user'
-                ? 'bg-gradient-to-r from-[#00f2fe]/10 to-[#4facfe]/20 border border-[#00f2fe]/30 text-white rounded-br-sm shadow-[0_4px_20px_rgba(0,242,254,0.05)]'
-                : 'bg-white/5 border border-white/10 text-gray-200 rounded-bl-sm drop-shadow-md backdrop-blur-sm'
+              ? 'bg-gradient-to-r from-[#00f2fe]/10 to-[#4facfe]/20 border border-[#00f2fe]/30 text-white rounded-br-sm shadow-[0_4px_20px_rgba(0,242,254,0.05)]'
+              : 'bg-white/5 border border-white/10 text-gray-200 rounded-bl-sm drop-shadow-md backdrop-blur-sm'
               }`}>
               {m.content}
 

@@ -21,7 +21,7 @@ export default function Sidebar() {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/tasks')
+                const res = await fetch('/api/tasks')
                 const data = await res.json()
                 if (data.tasks) setTasks(data.tasks)
             } catch (err) {
@@ -106,7 +106,7 @@ export default function Sidebar() {
                         <form className="flex flex-col gap-5" onSubmit={async (e) => {
                             e.preventDefault();
                             const fd = new FormData(e.currentTarget);
-                            await fetch('http://localhost:8000/api/tasks', {
+                            await fetch('/api/tasks', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({

@@ -9,7 +9,7 @@ export default function MemoryBank() {
     useEffect(() => {
         const fetchMemory = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/memory')
+                const res = await fetch('/api/memory')
                 const data = await res.json()
                 setMemoryContent(data.content || '')
             } catch (e) {
@@ -22,7 +22,7 @@ export default function MemoryBank() {
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            await fetch('http://localhost:8000/api/memory', {
+            await fetch('/api/memory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: memoryContent })
@@ -46,8 +46,8 @@ export default function MemoryBank() {
                 <button
                     onClick={handleSave}
                     className={`px-8 py-3.5 font-bold uppercase tracking-widest text-sm rounded transition-all shadow-lg flex items-center gap-3 border ${isSaving
-                            ? 'bg-[#10a37f] border-[#10a37f] text-black shadow-[0_0_20px_rgba(16,163,127,0.5)]'
-                            : 'bg-black/50 border-[#00f2fe]/50 text-[#00f2fe] hover:bg-[#00f2fe]/10 hover:border-[#00f2fe] hover:shadow-[0_0_25px_rgba(0,242,254,0.3)]'
+                        ? 'bg-[#10a37f] border-[#10a37f] text-black shadow-[0_0_20px_rgba(16,163,127,0.5)]'
+                        : 'bg-black/50 border-[#00f2fe]/50 text-[#00f2fe] hover:bg-[#00f2fe]/10 hover:border-[#00f2fe] hover:shadow-[0_0_25px_rgba(0,242,254,0.3)]'
                         }`}
                 >
                     {isSaving ? <><i className="fa-solid fa-check text-lg"></i> Engram Synced</> : <><i className="fa-solid fa-download text-lg"></i> Commit to Memory</>}

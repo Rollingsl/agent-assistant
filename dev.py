@@ -24,8 +24,9 @@ def main():
     print("[SYSTEM] Booting Next.js Interface (Port 3000)...")
     
     # We use shell=True on Windows/WSL to ensure npm resolves correctly
+    # pass as a single string so the shell interprets it exactly
     frontend_process = subprocess.Popen(
-        ["npm", "run", "dev"],
+        "npm run dev",
         cwd=frontend_dir,
         shell=True
     )
