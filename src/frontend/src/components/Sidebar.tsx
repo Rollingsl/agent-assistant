@@ -38,7 +38,7 @@ export default function Sidebar() {
             <aside className="w-[350px] flex flex-col p-6 animate-[slideInLeft_0.5s_ease] relative glass border-t border-l border-white/5">
                 <div className="flex items-center gap-3 text-2xl font-bold mb-8 tracking-wide">
                     <i className="fa-solid fa-globe text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i>
-                    ATLAS
+                    OPAS
                 </div>
 
                 {/* Navigation Links */}
@@ -99,7 +99,7 @@ export default function Sidebar() {
                         <div>
                             <h2 className="text-2xl font-bold m-0 flex items-center gap-2"><i className="fa-solid fa-bolt text-[#00f2fe] drop-shadow-[0_0_8px_rgba(0,242,254,0.8)]"></i> Agentic Delegation</h2>
                             <p className="text-sm text-gray-400 mt-2">
-                                Specify the objectives. Atlas will queue this, equip skills, and execute asynchronously. It will halt when HITL approval is required.
+                                Specify the objectives. OPAS will queue this, equip skills, and execute asynchronously. It will halt when HITL approval is required.
                             </p>
                         </div>
 

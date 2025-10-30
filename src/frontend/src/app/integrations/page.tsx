@@ -8,7 +8,7 @@ export default function Integrations() {
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault()
-        alert('Credentials synced to the local Atlas vault.')
+        alert('Credentials synced to the local OPAS vault.')
     }
 
     return (
@@ -29,7 +29,7 @@ export default function Integrations() {
                     <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide">
                         <i className="fa-brands fa-neos text-[#10a37f]"></i> OpenAI LLM Core
                     </h3>
-                    <p className="text-gray-400 mb-6 font-medium">Required for the Atlas inference engine to process advanced logical subroutines.</p>
+                    <p className="text-gray-400 mb-6 font-medium">Required for the OPAS inference engine to process advanced logical subroutines.</p>
                     <div className="flex flex-col gap-2">
                         <label className="text-[11px] text-gray-500 uppercase font-bold tracking-widest pl-1">Secret API Key</label>
                         <input
@@ -68,7 +68,7 @@ export default function Integrations() {
                     <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide">
                         <i className="fa-brands fa-telegram text-[#2AABEE]"></i> Telegram Bot
                     </h3>
-                    <p className="text-gray-400 font-medium">Remote neural access to Atlas via your mobile device.</p>
+                    <p className="text-gray-400 font-medium">Remote neural access to OPAS via your mobile device.</p>
                 </div>
 
                 <button type="submit" className="mt-6 px-10 py-4 bg-gradient-to-r from-[#00f2fe] to-[#4facfe] text-black font-bold uppercase tracking-widest text-sm rounded transition-all self-start shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:shadow-[0_0_30px_rgba(0,242,254,0.6)] hover:scale-105">

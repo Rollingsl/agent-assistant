@@ -40,7 +40,7 @@ export default function MemoryBank() {
                     <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide">
                         <i className="fa-solid fa-brain text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i> Memory Directives
                     </h2>
-                    <p className="text-gray-400 mt-4 max-w-2xl text-lg leading-relaxed">This neural vault stores your long-term context, boundaries, and learned preferences. Atlas integrates these instructions before equipping any skill or executing any subroutine.</p>
+                    <p className="text-gray-400 mt-4 max-w-2xl text-lg leading-relaxed">This neural vault stores your long-term context, boundaries, and learned preferences. OPAS integrates these instructions before equipping any skill or executing any subroutine.</p>
                 </div>
 
                 <button

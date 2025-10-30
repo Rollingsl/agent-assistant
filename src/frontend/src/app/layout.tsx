@@ -6,7 +6,7 @@ import './globals.css'
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
 
 export const metadata: Metadata = {
-  title: 'Atlas | Autonomous Assistant',
+  title: 'OPAS | Autonomous Assistant',
   description: 'A local, secure, and continuous autonomous agent.',
 }
 
