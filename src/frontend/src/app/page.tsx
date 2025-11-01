@@ -1,5 +1,6 @@
 'use client'
 
+import Logo from '@/components/Logo';
 import { useEffect, useState } from 'react';
 
 interface Message {
@@ -62,7 +63,7 @@ export default function Dashboard() {
     return (
       <div className="flex-grow flex flex-col items-center justify-center text-gray-500 gap-4">
         <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-4">
-          <i className="fa-solid fa-satellite-dish text-4xl opacity-50"></i>
+          <Logo size={64} className="opacity-40" />
         </div>
         <h2 className="text-2xl font-bold text-white tracking-wide">No Task Selected</h2>
         <p className="text-gray-400">Select an ongoing operation from the sidebar, or delegate a new one.</p>
@@ -75,7 +76,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-black/40 backdrop-blur-md sticky top-0 z-10">
         <h2 className="text-xl font-bold flex items-center gap-3 tracking-wide text-white">
-          <i className="fa-solid fa-microchip text-[#00f2fe] drop-shadow-[0_0_8px_rgba(0,242,254,0.6)]"></i> {activeTask.title}
+          <Logo size={24} className="drop-shadow-[0_0_8px_rgba(0,242,254,0.6)]" /> {activeTask.title}
         </h2>
         <span className="text-[#00f2fe] font-mono text-xs font-bold tracking-widest py-1.5 px-3 bg-[#00f2fe]/10 rounded border border-[#00f2fe]/30">ID: OP-{activeTask.id}</span>
       </div>
