@@ -2,51 +2,67 @@
 setlocal
 
 echo ==============================================
-echo   Autonomous Personal Assistant - Setup
+echo   OPAS - Autonomous Personal Assistant Setup
 echo ==============================================
+echo.
 
-:: Check if Docker is installed
-docker --version >nul 2>&1
+:: 1. Check for Python
+python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Docker is not installed or not running.
-    echo This assistant requires Docker Desktop to run securely.
-    echo.
-    echo Please download and install Docker Desktop for Windows from:
-    echo https://docs.docker.com/desktop/install/windows-install/
-    echo.
-    echo After installing and starting Docker Desktop, run this script again.
+    echo [ERROR] python is not installed or not in PATH.
+    echo Please install Python 3.10+ to continue.
+    pause
+    exit /b 1
+)
+echo [OK] Python detected.
+
+:: 2. Check for Node.js / npm
+call npm --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] npm is not installed or not in PATH.
+    echo This project requires Node.js v20+ to compile the Next.js frontend.
+    pause
+    exit /b 1
+)
+echo [OK] npm detected.
+echo.
+
+echo [1/2] Installing Backend Dependencies (Python) ...
+echo ==============================================
+if not exist "venv\" (
+    echo Creating virtual environment 'venv'...
+    python -m venv venv
+)
+
+:: Activate venv and install dependencies
+call venv\Scripts\activate.bat
+pip install -r src\backend\requirements.txt
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install Python dependencies.
     pause
     exit /b 1
 )
 
 echo.
-echo [OK] Docker is installed. Starting the assistant...
-echo.
-
-:: Run docker-compose
-docker-compose up -d --build
-
+echo [2/2] Installing Frontend Dependencies (Node.js) ...
+echo ==============================================
+cd src\frontend
+call npm install
 if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Failed to start the assistant. Please ensure Docker engine is running.
+    echo [ERROR] Failed to install Node.js dependencies.
     pause
     exit /b 1
 )
+cd ..\..
 
 echo.
 echo ==============================================
-echo [SUCCESS] The Assistant is starting up!
+echo [SUCCESS] Installation Complete!
 echo ==============================================
 echo.
-echo We will now open the Local Control Panel in your browser.
-echo Please configure your API keys there to begin.
+echo You can now boot OPAS in local development mode by running:
+echo   venv\Scripts\activate.bat
+echo   python dev.py
 echo.
-
-:: Wait a few seconds for the web server to boot
-timeout /t 5 /nobreak >nul
-
-:: Open the default browser to the local UI
-start http://localhost:3000
 
 pause
