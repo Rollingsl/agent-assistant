@@ -29,7 +29,7 @@ class MessageRequest(BaseModel):
 class MemoryUpdateRequest(BaseModel):
     content: str
 
-MEMORY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "memory.md")
+MEMORY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "memory.md")
 
 @app.on_event("startup")
 def on_startup():

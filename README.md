@@ -1,46 +1,47 @@
-# Autonomous Personal Assistant
+# OPAS - Autonomous Personal Assistant
 
-A highly secure, locally-managed autonomous personal assistant that handles messaging, calls, and more. It is designed to be incredibly simple to install for beginners while offering a top-tier local development experience for hackers.
+A highly secure, locally-managed autonomous personal assistant that handles intelligent background tasks, web research, and operations. It is designed to be incredibly simple to install for beginners while offering a top-tier local development experience for hackers with a modern `Next.js` and `FastAPI` architecture.
 
-## 🚀 Features (So Far)
+## 🚀 Features
 
-- **Isolated & Secure:** Runs inside a Docker container (acting as a lightweight hypervisor) so it cannot access or harm your host machine.
-- **Model Agnostic:** Uses `litellm` under the hood. You can easily plug in OpenAI, Anthropic, or run Llama 3 locally via Ollama.
-- **Telegram Interface:** No complex UI needed yet. You chat directly with your assistant securely through the Telegram app on your phone or desktop.
+- **Decoupled Architecture:** A beautiful Next.js Glassmorphism frontend running independently of a resilient Python FastAPI background engine.
+- **Anthropic Skill Engine:** Built on the modern AI paradigm of discrete "Skills" rather than hardcoded logical loops.
+- **Model Agnostic:** Plug in OpenAI, Anthropic, or run models locally.
+- **Persistent Memory Directives:** A local neural vault that stores context and behavioral constraints over time.
 
 ## 🛠️ Installation (For End Users)
 
-The philosophy of this project is a **"One-Click Setup"** for non-technical users.
+The philosophy of this project is a **"One-Click Setup"** for non-technical users looking to run the agent locally.
 
-1. Ensure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed on your machine.
+1. Ensure [Python 3.10+](https://www.python.org/downloads/) and [Node.js v20+](https://nodejs.org/en) are installed on your machine.
 2. Download or clone this repository.
-3. Edit the `.env` file and add your `OPENAI_API_KEY` and `TELEGRAM_BOT_TOKEN`.
+3. Edit the `.env` file and add your `OPENAI_API_KEY`.
 4. Run the installer script for your Operating System:
    - **Windows:** Double-click `install.bat`
    - **Mac/Linux:** Run `./install.sh` in your terminal.
 
-The installer will automatically verify Docker is running, build the secure container, and boot your assistant in the background.
+The installer will automatically create a secure Python Virtual Environment, install the required `pip` backend libraries, and install the `npm` frontend framework.
 
-## 💻 Local Development (For Hackers)
+## 💻 Local Development & Execution
 
-If you are developing new features and don't want to rebuild the Docker image after every line of code change, you can run the assistant directly on your host machine.
+To boot the OPAS assistant and access the local control panel, you only need to run one unified command.
 
-### Prerequisites
+Make sure you have activated your virtual environment:
 
-Make sure you have Python 3.11+ installed.
+```bash
+# Mac/Linux
+source venv/bin/activate
+# Windows
+venv\Scripts\activate
+```
 
-1. Install the Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Copy the example environment file and add your API keys:
-   ```bash
-   cp .env.example .env
-   ```
-3. Run the fast dev script to boot the assistant locally without Docker:
-   ```bash
-   python dev.py
-   ```
+Then run the intelligent development boot script:
+
+```bash
+python3 dev.py
+```
+
+`dev.py` will automatically check for missing dependencies, silently boot the FastAPI Python background engine, and launch the Next.js `OPAS` Operations Dashboard securely at `http://localhost`.
 
 ## 🔑 Getting Your API Keys
 
@@ -49,10 +50,9 @@ Make sure you have Python 3.11+ installed.
 
 ## 🗺️ Roadmap
 
-- [x] Dockerized Secure Environment
-- [x] Basic Telegram Messaging Interface
-- [x] Easy Windows/Mac/Linux Install Scripts
-- [x] Fast Local Dev Script (`dev.py`)
-- [ ] Add a Local Web UI Control Panel (for pasting keys easily)
+- [x] Fullstack Migration (Next.js + FastAPI)
+- [x] Anthropic Skills Architecture Implementation
+- [x] OPAS Branding & Dark Aurora Theme
+- [x] Automated Local Python & Node Setup Scripts
 - [ ] Implement Autonomous Tools (Web Search, File Reading)
-- [ ] Add Call Handling and Voice via Twilio API
+- [ ] Refine Cryptographic HITL (Human-in-the-Loop) Intercepts

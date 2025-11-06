@@ -6,8 +6,39 @@ import time
 
 def main():
     print("==============================================")
-    print("  Synapse Layer - Fullstack DEV MODE")
+    print("      ██████╗ ██████╗  █████╗ ███████╗        ")
+    print("      ██╔═══██╗██╔══██╗██╔══██╗██╔════╝        ")
+    print("      ██║   ██║██████╔╝███████║███████╗        ")
+    print("      ██║   ██║██╔═══╝ ██╔══██║╚════██║        ")
+    print("      ╚██████╔╝██║     ██║  ██║███████║        ")
+    print("       ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚══════╝        ")
+    print("==============================================")
+    print("          OPAS - Autonomous Agent             ")
     print("==============================================\n")
+    
+    # 0. Environment & Dependency Checks
+    print("[SYSTEM] Verifying Environment...")
+    frontend_dir = os.path.join(os.getcwd(), "src", "frontend")
+    backend_reqs = os.path.join(os.getcwd(), "src", "backend", "requirements.txt")
+    
+    # Auto-install Python dependencies if venv is missing
+    if not os.path.exists("venv"):
+        print("[SYSTEM] 'venv' not found. Creating Python Virtual Environment...")
+        subprocess.run([sys.executable, "-m", "venv", "venv"], check=True)
+        print("[SYSTEM] Installing OPAS backend dependencies...")
+        
+        # Determine the correct pip path based on OS
+        if os.name == 'nt':
+            pip_path = os.path.join("venv", "Scripts", "pip")
+        else:
+            pip_path = os.path.join("venv", "bin", "pip")
+            
+        subprocess.run([pip_path, "install", "-r", backend_reqs], check=True)
+        print("[OK] Python Backend modules installed.\n")
+    if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
+        print("[SYSTEM] Installing missing Next.js dependencies (this may take a minute)...")
+        subprocess.run("npm install", cwd=frontend_dir, shell=True, check=True)
+        print("[OK] Node modules installed.\n")
     
     # 1. Start Python Backend (FastAPI + Worker)
     print("[SYSTEM] Booting Python Engine (Background Service)...")
@@ -24,7 +55,6 @@ def main():
     time.sleep(2)
     
     # 2. Start Next.js Frontend (React UI) on Port 80
-    frontend_dir = os.path.join(os.getcwd(), "src", "frontend")
     print("[SYSTEM] Booting Next.js Interface (Port 80)...")
     
     # We use shell=True on Windows/WSL to ensure npm resolves correctly
