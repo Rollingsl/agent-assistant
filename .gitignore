@@ -21,12 +21,26 @@ __pycache__/
 *.swo
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
-# Application Data
+# Application Data & Memory Vault
 data/
 *.sqlite3
+memory.md
+
+# Next.js & Node.js
+src/frontend/node_modules/
+src/frontend/.next/
+src/frontend/out/
+src/frontend/build/
+src/frontend/.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+backend_service.log
 
 # Distribution / packaging
 dist/

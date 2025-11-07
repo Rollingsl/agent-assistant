@@ -8,7 +8,7 @@ WORKDIR /app
 RUN adduser --disabled-password --gecos '' appuser
 
 # Install dependencies
-COPY requirements.txt .
+COPY src/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
@@ -17,5 +17,5 @@ COPY ./src /app/src
 # Switch to the non-root user
 USER appuser
 
-# Run the agent
-CMD ["python", "src/agent.py"]
+# Run the FastAPI server natively on port 8000 using uvicorn
+CMD ["uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
