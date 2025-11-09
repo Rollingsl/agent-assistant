@@ -12,7 +12,7 @@ export default function Integrations() {
     }
 
     return (
-        <div className="flex flex-col h-full p-10 animate-[fadeIn_0.5s_ease] overflow-y-auto hide-scrollbar">
+        <div className="flex flex-col flex-1 p-10 animate-[fadeIn_0.5s_ease] overflow-y-auto hide-scrollbar">
             <div className="mb-10 pb-6 border-b border-white/10 h-[120px] shrink-0">
                 <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide">
                     <i className="fa-solid fa-key text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i>

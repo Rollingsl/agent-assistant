@@ -34,7 +34,7 @@ export default function MemoryBank() {
     }
 
     return (
-        <div className="flex flex-col h-full p-10 animate-[fadeIn_0.5s_ease]">
+        <div className="flex flex-col flex-1 p-10 animate-[fadeIn_0.5s_ease]">
             <div className="mb-8 flex justify-between items-end border-b border-white/10 pb-6 shrink-0">
                 <div>
                     <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide">

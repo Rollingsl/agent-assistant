@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Logo from './Logo';
 
@@ -13,10 +11,14 @@ interface Task {
     budget: number;
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+    currentView: 'dashboard' | 'integrations' | 'memory';
+    setCurrentView: (view: 'dashboard' | 'integrations' | 'memory') => void;
+}
+
+export default function Sidebar({ currentView, setCurrentView }: SidebarProps) {
     const [tasks, setTasks] = useState<Task[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const pathname = usePathname()
 
     // Polling for tasks
     useEffect(() => {
@@ -44,15 +46,15 @@ export default function Sidebar() {
 
                 {/* Navigation Links */}
                 <div className="flex flex-col gap-2 mb-8 font-medium">
-                    <Link href="/" className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 ${pathname === '/' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                        <i className={`fa-solid fa-satellite-dish w-5 text-center ${pathname === '/' ? 'text-[#00f2fe]' : ''}`}></i> Operations Board
-                    </Link>
-                    <Link href="/integrations" className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 ${pathname === '/integrations' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                        <i className={`fa-solid fa-key w-5 text-center ${pathname === '/integrations' ? 'text-[#00f2fe]' : ''}`}></i> API & Integrations
-                    </Link>
-                    <Link href="/memory" className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 ${pathname === '/memory' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                        <i className={`fa-solid fa-brain w-5 text-center ${pathname === '/memory' ? 'text-[#00f2fe]' : ''}`}></i> Memory & Directives
-                    </Link>
+                    <button onClick={() => setCurrentView('dashboard')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'dashboard' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                        <i className={`fa-solid fa-satellite-dish w-5 text-center ${currentView === 'dashboard' ? 'text-[#00f2fe]' : ''}`}></i> Operations Board
+                    </button>
+                    <button onClick={() => setCurrentView('integrations')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'integrations' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                        <i className={`fa-solid fa-key w-5 text-center ${currentView === 'integrations' ? 'text-[#00f2fe]' : ''}`}></i> API & Integrations
+                    </button>
+                    <button onClick={() => setCurrentView('memory')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'memory' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                        <i className={`fa-solid fa-brain w-5 text-center ${currentView === 'memory' ? 'text-[#00f2fe]' : ''}`}></i> Memory & Directives
+                    </button>
                 </div>
 
                 <button
