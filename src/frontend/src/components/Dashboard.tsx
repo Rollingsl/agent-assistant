@@ -72,7 +72,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-full animate-[fadeIn_0.5s_ease]">
+    <div className="flex flex-col flex-1 animate-[fadeIn_0.5s_ease]">
       {/* Header */}
       <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-black/40 backdrop-blur-md sticky top-0 z-10">
         <h2 className="text-xl font-bold flex items-center gap-3 tracking-wide text-white">

@@ -38,7 +38,7 @@ export default function Sidebar({ currentView, setCurrentView }: SidebarProps) {
 
     return (
         <>
-            <aside className="w-[350px] flex flex-col p-6 animate-[slideInLeft_0.5s_ease] relative glass border-t border-l border-white/5">
+            <aside className="w-[350px] flex flex-col p-6 animate-[slideInLeft_0.5s_ease] relative glass border-t border-l border-white/5 h-full rounded-2xl">
                 <div className="flex items-center gap-3 text-2xl font-bold mb-8 tracking-wide">
                     <Logo size={40} className="drop-shadow-[0_0_10px_rgba(0,242,254,0.4)]" />
                     OPAS
