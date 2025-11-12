@@ -12,8 +12,8 @@ interface Task {
 }
 
 interface SidebarProps {
-    currentView: 'dashboard' | 'integrations' | 'memory';
-    setCurrentView: (view: 'dashboard' | 'integrations' | 'memory') => void;
+    currentView: 'dashboard' | 'integrations' | 'knowledge';
+    setCurrentView: (view: 'dashboard' | 'integrations' | 'knowledge') => void;
 }
 
 export default function Sidebar({ currentView, setCurrentView }: SidebarProps) {
@@ -52,8 +52,8 @@ export default function Sidebar({ currentView, setCurrentView }: SidebarProps) {
                     <button onClick={() => setCurrentView('integrations')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'integrations' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
                         <i className={`fa-solid fa-key w-5 text-center ${currentView === 'integrations' ? 'text-[#00f2fe]' : ''}`}></i> API & Integrations
                     </button>
-                    <button onClick={() => setCurrentView('memory')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'memory' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
-                        <i className={`fa-solid fa-brain w-5 text-center ${currentView === 'memory' ? 'text-[#00f2fe]' : ''}`}></i> Memory & Directives
+                    <button onClick={() => setCurrentView('knowledge')} className={`p-3 rounded-lg flex items-center gap-3 transition-all duration-300 w-full text-left ${currentView === 'knowledge' ? 'bg-[#00f2fe]/10 border border-[#4facfe]/50 text-white drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                        <i className={`fa-solid fa-book-open-reader w-5 text-center ${currentView === 'knowledge' ? 'text-[#00f2fe]' : ''}`}></i> Knowledge Base
                     </button>
                 </div>
 

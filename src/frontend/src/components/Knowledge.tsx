@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-export default function MemoryBank() {
+export default function KnowledgeBase() {
     const [memoryContent, setMemoryContent] = useState('')
     const [isSaving, setIsSaving] = useState(false)
 
@@ -38,9 +38,9 @@ export default function MemoryBank() {
             <div className="mb-8 flex justify-between items-end border-b border-white/10 pb-6 shrink-0">
                 <div>
                     <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide">
-                        <i className="fa-solid fa-brain text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i> Memory Directives
+                        <i className="fa-solid fa-book-open-reader text-[#00f2fe] drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]"></i> Knowledge Base
                     </h2>
-                    <p className="text-gray-400 mt-4 max-w-2xl text-lg leading-relaxed">This neural vault stores your long-term context, boundaries, and learned preferences. OPAS integrates these instructions before equipping any skill or executing any subroutine.</p>
+                    <p className="text-gray-400 mt-4 max-w-2xl text-lg leading-relaxed">This neural library stores your long-term context, boundaries, API documentations, and learned preferences. OPAS automatically queries this knowledge base before equipping any skill or executing any subroutine.</p>
                 </div>
 
                 <button
@@ -50,7 +50,7 @@ export default function MemoryBank() {
                         : 'bg-black/50 border-[#00f2fe]/50 text-[#00f2fe] hover:bg-[#00f2fe]/10 hover:border-[#00f2fe] hover:shadow-[0_0_25px_rgba(0,242,254,0.3)]'
                         }`}
                 >
-                    {isSaving ? <><i className="fa-solid fa-check text-lg"></i> Engram Synced</> : <><i className="fa-solid fa-download text-lg"></i> Commit to Memory</>}
+                    {isSaving ? <><i className="fa-solid fa-check text-lg"></i> Synced to Library</> : <><i className="fa-solid fa-download text-lg"></i> Commit Knowledge</>}
                 </button>
             </div>
 
@@ -59,11 +59,11 @@ export default function MemoryBank() {
                     value={memoryContent}
                     onChange={(e) => setMemoryContent(e.target.value)}
                     className="flex-grow w-full bg-black/40 border border-white/5 p-8 text-lg font-mono text-[#f8f9fa] rounded-2xl outline-none focus:border-[#00f2fe]/50 resize-none hide-scrollbar transition-all leading-loose shadow-inner"
-                    placeholder="Enter cross-session constraints or rules here..."
+                    placeholder="Enter permanent rules, constraints, API keys, or operational context here..."
                     spellCheck="false"
                 />
                 <div className="absolute right-8 bottom-10 text-[11px] text-[#00f2fe] font-bold uppercase tracking-widest bg-[#00f2fe]/10 border border-[#00f2fe]/20 px-3 py-1.5 rounded-md backdrop-blur-sm">
-                    sys/memory.md
+                    data/memory.md
                 </div>
             </div>
         </div>
