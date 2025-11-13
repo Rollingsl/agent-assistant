@@ -26,13 +26,38 @@ class MessageRequest(BaseModel):
     content: str
     is_approval: bool = False
 
-class MemoryUpdateRequest(BaseModel):
+class KnowledgeUpdateRequest(BaseModel):
     content: str
 
-MEMORY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "memory.md")
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
+KNOWLEDGE_DIR = os.path.join(DATA_DIR, "knowledge")
+KNOWLEDGE_PATH = os.path.join(KNOWLEDGE_DIR, "knowledge.md")
+
+DEFAULT_KNOWLEDGE = """# OPAS Neural Knowledge Base
+
+This file acts as the persistent, long-term memory for OPAS.
+The backend automatically injects these rules into the LLM context before every action.
+
+## Core Directives:
+1. Always strive for autonomous completion.
+2. If an action is dangerous (e.g. spending tokens, sending emails), request HITL (Human-In-The-Loop) approval first.
+3. Be concise and professional in all outputs.
+"""
 
 @app.on_event("startup")
 def on_startup():
+    # 1. Ensure Data Directory Exists
+    os.makedirs(DATA_DIR, exist_ok=True)
+    
+    # 2. Ensure Knowledge Directory Exists
+    os.makedirs(KNOWLEDGE_DIR, exist_ok=True)
+    
+    # 3. Seed Knowledge Base if empty
+    if not os.path.exists(KNOWLEDGE_PATH):
+        with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
+            f.write(DEFAULT_KNOWLEDGE)
+            
+    # 4. Initialize SQLite Database
     init_db()
 
 @app.get("/api/tasks")
@@ -58,16 +83,16 @@ async def post_task_message(task_id: int, req: MessageRequest):
         add_message(task_id, "user", req.content)
     return {"success": True}
 
-@app.get("/api/memory")
-async def get_memory():
-    if os.path.exists(MEMORY_PATH):
-        with open(MEMORY_PATH, "r", encoding="utf-8") as f:
+@app.get("/api/knowledge")
+async def get_knowledge():
+    if os.path.exists(KNOWLEDGE_PATH):
+        with open(KNOWLEDGE_PATH, "r", encoding="utf-8") as f:
             return {"content": f.read()}
     return {"content": ""}
 
-@app.post("/api/memory")
-async def update_memory(req: MemoryUpdateRequest):
-    with open(MEMORY_PATH, "w", encoding="utf-8") as f:
+@app.post("/api/knowledge")
+async def update_knowledge(req: KnowledgeUpdateRequest):
+    with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
         f.write(req.content)
     return {"success": True}
 

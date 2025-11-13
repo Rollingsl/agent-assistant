@@ -12,11 +12,21 @@ def process_message(user_message: str) -> str:
     if not api_key or api_key == "your_openai_api_key_here":
         return f"[Mock Mode] Hi! I received: '{user_message}'. To make me smart, please add your OPENAI_API_KEY to the .env file!"
 
+    # Inject Knowledge Base Context
+    knowledge_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "knowledge", "knowledge.md")
+    system_context = "You are OPAS, a highly capable autonomous agent."
+    
+    if os.path.exists(knowledge_path):
+        with open(knowledge_path, "r", encoding="utf-8") as f:
+            kb_content = f.read()
+            if kb_content.strip():
+                system_context += f"\n\nCRITICAL CONSTRAINTS FROM KNOWLEDGE BASE:\n{kb_content}"
+
     try:
         response = completion(
             model=llm_model,
             messages=[
-                {"role": "system", "content": "You are a helpful and highly capable personal assistant."},
+                {"role": "system", "content": system_context},
                 {"role": "user", "content": user_message}
             ]
         )

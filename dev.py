@@ -59,7 +59,7 @@ def main():
     # Redirect backend output to a hidden log file to keep the terminal clean
     log_file = open("backend_service.log", "w")
     backend_process = subprocess.Popen(
-        [sys.executable, "-m", "src.backend.agent"],
+        [sys.executable, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8000)"],
         cwd=os.getcwd(),
         stdout=log_file,
         stderr=subprocess.STDOUT

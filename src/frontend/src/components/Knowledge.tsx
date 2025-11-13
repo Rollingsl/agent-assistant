@@ -3,29 +3,29 @@
 import { useEffect, useState } from 'react'
 
 export default function KnowledgeBase() {
-    const [memoryContent, setMemoryContent] = useState('')
+    const [knowledgeContent, setKnowledgeContent] = useState('')
     const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
-        const fetchMemory = async () => {
+        const fetchKnowledge = async () => {
             try {
-                const res = await fetch('/api/memory')
+                const res = await fetch('/api/knowledge')
                 const data = await res.json()
-                setMemoryContent(data.content || '')
+                setKnowledgeContent(data.content || '')
             } catch (e) {
-                console.error("Failed to load memory")
+                console.error("Failed to load knowledge")
             }
         }
-        fetchMemory()
+        fetchKnowledge()
     }, [])
 
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            await fetch('/api/memory', {
+            await fetch('/api/knowledge', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: memoryContent })
+                body: JSON.stringify({ content: knowledgeContent })
             })
             setTimeout(() => setIsSaving(false), 800)
         } catch (e) {
@@ -56,14 +56,14 @@ export default function KnowledgeBase() {
 
             <div className="flex-grow flex flex-col relative group pb-4">
                 <textarea
-                    value={memoryContent}
-                    onChange={(e) => setMemoryContent(e.target.value)}
+                    value={knowledgeContent}
+                    onChange={(e) => setKnowledgeContent(e.target.value)}
                     className="flex-grow w-full bg-black/40 border border-white/5 p-8 text-lg font-mono text-[#f8f9fa] rounded-2xl outline-none focus:border-[#00f2fe]/50 resize-none hide-scrollbar transition-all leading-loose shadow-inner"
                     placeholder="Enter permanent rules, constraints, API keys, or operational context here..."
                     spellCheck="false"
                 />
                 <div className="absolute right-8 bottom-10 text-[11px] text-[#00f2fe] font-bold uppercase tracking-widest bg-[#00f2fe]/10 border border-[#00f2fe]/20 px-3 py-1.5 rounded-md backdrop-blur-sm">
-                    data/memory.md
+                    data/knowledge/knowledge.md
                 </div>
             </div>
         </div>
