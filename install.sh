@@ -31,9 +31,8 @@ if [ ! -d "venv" ]; then
     python3 -m venv venv
 fi
 
-# Activate venv and install dependencies
-source venv/bin/activate
-pip install -r src/backend/requirements.txt
+# Use the explicit path to the venv pip binary
+./venv/bin/pip install -r src/backend/requirements.txt
 if [ $? -ne 0 ]; then
     echo "[ERROR] Failed to install Python dependencies."
     exit 1
@@ -56,6 +55,5 @@ echo "[SUCCESS] Installation Complete!"
 echo "=============================================="
 echo ""
 echo "You can now boot OPAS in local development mode by running:"
-echo "  source venv/bin/activate"
-echo "  python3 dev.py"
+echo "  ./venv/bin/python dev.py"
 echo ""

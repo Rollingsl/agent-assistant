@@ -34,9 +34,8 @@ if not exist "venv\" (
     python -m venv venv
 )
 
-:: Activate venv and install dependencies
-call venv\Scripts\activate.bat
-pip install -r src\backend\requirements.txt
+:: Use the explicit path to the venv pip binary
+call venv\Scripts\pip install -r src\backend\requirements.txt
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install Python dependencies.
     pause
@@ -61,8 +60,7 @@ echo [SUCCESS] Installation Complete!
 echo ==============================================
 echo.
 echo You can now boot OPAS in local development mode by running:
-echo   venv\Scripts\activate.bat
-echo   python dev.py
+echo   venv\Scripts\python dev.py
 echo.
 
 pause

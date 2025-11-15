@@ -34,32 +34,40 @@ def main():
     frontend_dir = os.path.join(os.getcwd(), "src", "frontend")
     backend_reqs = os.path.join(os.getcwd(), "src", "backend", "requirements.txt")
     
-    # Auto-install Python dependencies if venv is missing
+    # 1. Initialize Python Backend
     if not os.path.exists("venv"):
         print(f"{C.YELLOW}[SYSTEM]{C.END} 'venv' not found. Creating Python Virtual Environment...")
         subprocess.run([sys.executable, "-m", "venv", "venv"], check=True)
-        print(f"{C.YELLOW}[SYSTEM]{C.END} Installing OPAS backend dependencies...")
         
-        # Determine the correct pip path based on OS
-        if os.name == 'nt':
-            pip_path = os.path.join("venv", "Scripts", "pip")
-        else:
-            pip_path = os.path.join("venv", "bin", "pip")
-            
-        subprocess.run([pip_path, "install", "-r", backend_reqs], check=True)
-        subprocess.run([pip_path, "install", "-r", backend_reqs], check=True)
-        print(f"{C.GREEN}[OK]{C.END} Python Backend modules installed.\n")
+    print(f"{C.YELLOW}[SYSTEM]{C.END} Verifying and updating OPAS backend dependencies...")
+    
+    # Determine the correct pip path based on OS
+    if os.name == 'nt':
+        pip_path = os.path.join("venv", "Scripts", "pip")
+    else:
+        pip_path = os.path.join("venv", "bin", "pip")
+        
+    subprocess.run([pip_path, "install", "-r", backend_reqs], check=True)
+    print(f"{C.GREEN}[OK]{C.END} Python Backend modules are up to date.\n")
+    
+    # 2. Initialize Frontend dependencies
     if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
         print(f"{C.YELLOW}[SYSTEM]{C.END} Installing missing Next.js dependencies (this may take a minute)...")
         subprocess.run("npm install", cwd=frontend_dir, shell=True, check=True)
         print(f"{C.GREEN}[OK]{C.END} Node modules installed.\n")
     
-    # 1. Start Python Backend (FastAPI + Worker)
+    # 3. Start Python Backend (FastAPI + Worker)
     print(f"{C.CYAN}[SYSTEM]{C.END} Booting Python Engine {C.GREEN}(Background Service){C.END}...")
+    
+    if os.name == 'nt':
+        python_path = os.path.join("venv", "Scripts", "python")
+    else:
+        python_path = os.path.join("venv", "bin", "python")
+
     # Redirect backend output to a hidden log file to keep the terminal clean
     log_file = open("backend_service.log", "w")
     backend_process = subprocess.Popen(
-        [sys.executable, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8000)"],
+        [python_path, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8000)"],
         cwd=os.getcwd(),
         stdout=log_file,
         stderr=subprocess.STDOUT
@@ -68,7 +76,7 @@ def main():
     # Give the backend a second to bind to the port
     time.sleep(2)
     
-    # 2. Start Next.js Frontend (React UI) on Port 80
+    # 4. Start Next.js Frontend (React UI) on Port 80
     print(f"{C.CYAN}[SYSTEM]{C.END} Booting Next.js Interface {C.GREEN}(Port 80){C.END}...")
     
     # We use shell=True on Windows/WSL to ensure npm resolves correctly
