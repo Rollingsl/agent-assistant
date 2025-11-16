@@ -15,11 +15,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
       </head>
-      <body className={`${outfit.variable} antialiased bg-[#05050A] text-white overflow-hidden`}>
+      <body className={`${outfit.variable} antialiased overflow-hidden`}>
         {children}
       </body>
     </html>

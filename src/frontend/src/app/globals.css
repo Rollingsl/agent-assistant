@@ -1,23 +1,64 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-primary: #00f2fe;
-  --color-brand-hover: #4facfe;
-  --color-brand-bg: #05050a;
-  --color-panel-bg: rgba(10, 10, 15, 0.4);
-  --color-panel-border: rgba(255, 255, 255, 0.05);
-  --color-text-main: #f8f9fa;
-  --color-text-muted: #8b949e;
-  
+  --color-brand-primary: var(--primary);
+  --color-brand-hover: var(--hover);
+  --color-brand-bg: var(--bg);
+  --color-panel-bg: var(--panel);
+  --color-panel-border: var(--border);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+
   --font-sans: "Outfit", sans-serif;
 }
 
 @layer base {
+  :root {
+    /* Default Dark Theme (Abyss) */
+    --primary: #00f2fe;
+    --hover: #4facfe;
+    --bg: #05050a;
+    --panel: rgba(10, 10, 15, 0.4);
+    --border: rgba(255, 255, 255, 0.05);
+    --text-main: #f8f9fa;
+    --text-muted: #8b949e;
+    --accent: rgba(0, 242, 254, 0.1);
+    --gradient-1: rgba(0, 242, 254, 0.04);
+    --gradient-2: rgba(79, 172, 254, 0.04);
+  }
+
+  [data-theme="light"] {
+    --primary: #0284c7;
+    --hover: #0369a1;
+    --bg: #f8fafc;
+    --panel: rgba(255, 255, 255, 0.7);
+    --border: rgba(0, 0, 0, 0.05);
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --accent: rgba(2, 132, 199, 0.1);
+    --gradient-1: rgba(2, 132, 199, 0.03);
+    --gradient-2: rgba(3, 105, 161, 0.03);
+  }
+
+  [data-theme="aurora"] {
+    --primary: #f43f5e;
+    --hover: #fb7185;
+    --bg: #2a0a18;
+    --panel: rgba(42, 10, 24, 0.5);
+    --border: rgba(255, 255, 255, 0.08);
+    --text-main: #fecdd3;
+    --text-muted: #fda4af;
+    --accent: rgba(244, 63, 94, 0.15);
+    --gradient-1: rgba(244, 63, 94, 0.05);
+    --gradient-2: rgba(251, 113, 133, 0.05);
+  }
+
   body {
     background-color: var(--color-brand-bg);
-    background-image: 
-      radial-gradient(circle at 15% 50%, rgba(0, 242, 254, 0.04), transparent 30%),
-      radial-gradient(circle at 85% 30%, rgba(79, 172, 254, 0.04), transparent 30%);
+    background-image:
+      radial-gradient(circle at 15% 50%, var(--gradient-1), transparent 30%),
+      radial-gradient(circle at 85% 30%, var(--gradient-2), transparent 30%);
     color: var(--color-text-main);
     margin: 0;
     padding: 0;
@@ -25,6 +66,9 @@
     height: 100vh;
     overflow: hidden;
     font-family: var(--font-sans);
+    transition:
+      background-color 0.5s ease,
+      color 0.5s ease;
   }
 }
 
@@ -37,7 +81,7 @@
     border-radius: 16px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
   }
-  
+
   .hide-scrollbar::-webkit-scrollbar {
     width: 4px;
   }
