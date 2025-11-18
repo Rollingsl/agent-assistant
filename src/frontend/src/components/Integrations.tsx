@@ -1,14 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Integrations() {
     const [openAiKey, setOpenAiKey] = useState('')
     const [emailPass, setEmailPass] = useState('')
+    const [keyStatus, setKeyStatus] = useState<{ has_key: boolean; source: string } | null>(null)
+    const [saving, setSaving] = useState(false)
+    const [saved, setSaved] = useState(false)
 
-    const handleSave = (e: React.FormEvent) => {
+    // On mount, check if a key is already configured in the backend (.env)
+    useEffect(() => {
+        fetch('/api/config/openai')
+            .then(r => r.json())
+            .then(d => setKeyStatus(d))
+            .catch(() => { })
+    }, [])
+
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
-        alert('Credentials synced to the local OPAS vault.')
+        setSaving(true)
+        try {
+            if (openAiKey.trim()) {
+                await fetch('/api/config/openai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: openAiKey })
+                })
+                setKeyStatus({ has_key: true, source: 'override' })
+            }
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2000)
+        } catch (e) { } finally {
+            setSaving(false)
+        }
     }
 
     return (
@@ -16,42 +41,58 @@ export default function Integrations() {
             <div className="flex justify-between items-end mb-10 pb-6 border-b border-[var(--border)] shrink-0 transition-colors duration-500">
                 <div>
                     <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide text-[var(--text-main)] transition-colors duration-500">
-                        <i className="fa-solid fa-server text-[var(--primary)] drop-shadow-[0_0_10px_var(--primary)] transition-all duration-500"></i>
+                        <i className="fa-solid fa-server text-[var(--primary)] transition-all duration-500"></i>
                         Integrations & APIs
                     </h2>
-                    <p className="text-[var(--text-muted)] mt-4 text-lg max-w-3xl transition-colors duration-500">Manage your cryptographic keys and external app connections. These dictate the skills OPAS can equip. Keys are stored locally inside your vault and never transmitted externally without explicit consent.</p>
+                    <p className="text-[var(--text-muted)] mt-4 text-lg max-w-3xl transition-colors duration-500">Manage your cryptographic keys and external app connections. Keys are stored locally inside your vault and never transmitted externally without explicit consent.</p>
+
+                    {/* Key status badge */}
+                    {keyStatus && (
+                        <div className={`mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-3 py-1.5 border ${keyStatus.has_key ? 'text-[#10a37f] border-[#10a37f]/40 bg-[#10a37f]/10' : 'text-[#f39c12] border-[#f39c12]/40 bg-[#f39c12]/10'}`}>
+                            <i className={`fa-solid ${keyStatus.has_key ? 'fa-circle-check' : 'fa-circle-xmark'}`}></i>
+                            {keyStatus.has_key
+                                ? `OpenAI key active · source: ${keyStatus.source === 'override' ? 'UI override' : '.env file'}`
+                                : 'No OpenAI key configured — add one below or in your .env file'}
+                        </div>
+                    )}
                 </div>
-                <button onClick={handleSave} className="px-8 py-3.5 bg-[var(--primary)] text-black font-bold uppercase tracking-widest text-sm rounded transition-all shadow-[0_0_20px_var(--accent)] hover:shadow-[0_0_30px_var(--primary)] hover:scale-105 flex items-center gap-2">
-                    <i className="fa-solid fa-lock text-lg"></i> Sync to Vault
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`px-8 py-3.5 font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 ${saved ? 'bg-[#10a37f] text-black' : 'bg-[var(--primary)] text-black hover:opacity-90 hover:scale-[1.02]'}`}
+                >
+                    {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Saving...</> :
+                        saved ? <><i className="fa-solid fa-check"></i> Synced!</> :
+                            <><i className="fa-solid fa-lock text-lg"></i> Sync to Vault</>}
                 </button>
             </div>
 
             <form onSubmit={handleSave} className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10">
 
                 {/* OpenAI Card */}
-                <div className="bg-[var(--panel)] p-8 rounded-2xl border border-[var(--border)] relative overflow-hidden group shadow-lg flex flex-col justify-between transition-colors duration-500">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#10a37f]"></div>
+                <div className="bg-[var(--panel)] p-8 border border-[var(--border)] border-l-4 border-l-[#10a37f] relative overflow-hidden group flex flex-col justify-between transition-colors duration-500">
                     <div>
                         <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide text-[var(--text-main)] transition-colors duration-500">
                             <i className="fa-brands fa-neos text-[#10a37f]"></i> OpenAI LLM Core
                         </h3>
-                        <p className="text-[var(--text-muted)] mb-6 font-medium leading-relaxed transition-colors duration-500">Required for the OPAS inference engine to process advanced logical subroutines and parsing.</p>
+                        <p className="text-[var(--text-muted)] mb-6 font-medium leading-relaxed transition-colors duration-500">Required for the OPAS inference engine to process advanced logical subroutines and parsing. The key in your <code className="font-mono text-[var(--primary)] text-xs bg-[var(--accent)] px-1">.env</code> file is used by default; paste a key below to override it for this session.</p>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label className="text-[11px] text-[var(--text-muted)] uppercase font-bold tracking-widest pl-1">Secret API Key</label>
+                        <label className="text-[11px] text-[var(--text-muted)] uppercase font-bold tracking-widest pl-1">
+                            Override Key <span className="normal-case font-normal">(leave blank to use .env)</span>
+                        </label>
                         <input
                             type="password"
                             value={openAiKey}
                             onChange={(e) => setOpenAiKey(e.target.value)}
-                            className="p-4 bg-black/20 border border-[var(--border)] rounded-xl text-[var(--text-main)] outline-none focus:border-[#10a37f] transition-all font-mono shadow-inner"
-                            placeholder="sk-..."
+                            className="p-4 bg-[var(--bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[#10a37f] transition-all font-mono"
+                            placeholder="sk-... (optional override)"
                         />
                     </div>
                 </div>
 
                 {/* Email Card */}
-                <div className="bg-[var(--panel)] p-8 rounded-2xl border border-[var(--border)] relative overflow-hidden shadow-lg flex flex-col justify-between transition-colors duration-500">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#ea4335]"></div>
+                <div className="bg-[var(--panel)] p-8 border border-[var(--border)] border-l-4 border-l-[#ea4335] relative overflow-hidden flex flex-col justify-between transition-colors duration-500">
                     <div>
                         <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide text-[var(--text-main)] transition-colors duration-500">
                             <i className="fa-brands fa-google text-[#ea4335]"></i> Gmail Operator
@@ -64,16 +105,15 @@ export default function Integrations() {
                             type="password"
                             value={emailPass}
                             onChange={(e) => setEmailPass(e.target.value)}
-                            className="p-4 bg-black/20 border border-[var(--border)] rounded-xl text-[var(--text-main)] outline-none focus:border-[#ea4335] transition-all font-mono shadow-inner"
+                            className="p-4 bg-[var(--bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[#ea4335] transition-all font-mono"
                             placeholder="16-character app password"
                         />
                     </div>
                 </div>
 
                 {/* Telegram Card */}
-                <div className="bg-[var(--panel)] p-8 rounded-2xl border border-[var(--border)] relative overflow-hidden backdrop-blur-md cursor-not-allowed transition-colors duration-500">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#2AABEE]"></div>
-                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 rounded text-[var(--text-main)]">Pending Update</div>
+                <div className="bg-[var(--panel)] p-8 border border-[var(--border)] border-l-4 border-l-[#2AABEE] relative overflow-hidden cursor-not-allowed opacity-60 transition-colors duration-500">
+                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 text-[var(--text-main)]">Pending Update</div>
                     <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide text-[var(--text-main)] transition-colors duration-500">
                         <i className="fa-brands fa-telegram text-[#2AABEE]"></i> Telegram Bot
                     </h3>
@@ -81,9 +121,8 @@ export default function Integrations() {
                 </div>
 
                 {/* Slack Card */}
-                <div className="bg-[var(--panel)] p-8 rounded-2xl border border-[var(--border)] relative overflow-hidden backdrop-blur-md cursor-not-allowed transition-colors duration-500">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#E01E5A]"></div>
-                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 rounded text-[var(--text-main)]">Pending Update</div>
+                <div className="bg-[var(--panel)] p-8 border border-[var(--border)] border-l-4 border-l-[#E01E5A] relative overflow-hidden cursor-not-allowed opacity-60 transition-colors duration-500">
+                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 text-[var(--text-main)]">Pending Update</div>
                     <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide text-[var(--text-main)] transition-colors duration-500">
                         <i className="fa-brands fa-slack text-[#E01E5A]"></i> Slack Integration
                     </h3>
@@ -91,9 +130,8 @@ export default function Integrations() {
                 </div>
 
                 {/* Discord Card */}
-                <div className="bg-[var(--panel)] p-8 rounded-2xl border border-[var(--border)] relative overflow-hidden backdrop-blur-md cursor-not-allowed transition-colors duration-500">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#5865F2]"></div>
-                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 rounded text-[var(--text-main)]">Pending Update</div>
+                <div className="bg-[var(--panel)] p-8 border border-[var(--border)] border-l-4 border-l-[#5865F2] relative overflow-hidden cursor-not-allowed opacity-60 transition-colors duration-500">
+                    <div className="absolute top-8 right-8 text-[10px] font-bold uppercase tracking-widest bg-[var(--text-main)]/10 px-3 py-1.5 text-[var(--text-main)]">Pending Update</div>
                     <h3 className="text-2xl font-bold mb-2 flex items-center gap-3 tracking-wide text-[var(--text-main)] transition-colors duration-500">
                         <i className="fa-brands fa-discord text-[#5865F2]"></i> Discord Sentinel
                     </h3>

@@ -7,6 +7,9 @@ from src.backend.database import init_db, add_task, get_tasks, get_messages, add
 
 app = FastAPI()
 
+# In-memory key override (set via /api/config/openai, takes priority over .env)
+_openai_key_override: str | None = None
+
 # Enable CORS for the local developer dashboard
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +31,9 @@ class MessageRequest(BaseModel):
 
 class KnowledgeUpdateRequest(BaseModel):
     content: str
+
+class ApiKeyRequest(BaseModel):
+    api_key: str
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
 KNOWLEDGE_DIR = os.path.join(DATA_DIR, "knowledge")
@@ -95,6 +101,25 @@ async def update_knowledge(req: KnowledgeUpdateRequest):
     with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
         f.write(req.content)
     return {"success": True}
+
+@app.get("/api/config/openai")
+async def get_openai_config():
+    """Returns whether an OpenAI key is configured (from .env or UI override)."""
+    global _openai_key_override
+    env_key = os.getenv("OPENAI_API_KEY", "")
+    has_env_key = bool(env_key and env_key != "your_openai_api_key_here")
+    has_override = bool(_openai_key_override)
+    return {"has_key": has_env_key or has_override, "source": "override" if has_override else ("env" if has_env_key else "none")}
+
+@app.post("/api/config/openai")
+async def set_openai_key(req: ApiKeyRequest):
+    """Accepts an API key from the UI to override what's in .env at runtime."""
+    global _openai_key_override
+    _openai_key_override = req.api_key.strip() if req.api_key.strip() else None
+    # Also push it into the environment so litellm/openai SDK picks it up
+    if _openai_key_override:
+        os.environ["OPENAI_API_KEY"] = _openai_key_override
+    return {"success": True, "message": "API key updated for this session."}
 
 def start_web_server():
     uvicorn.run(app, host="0.0.0.0", port=8000)
