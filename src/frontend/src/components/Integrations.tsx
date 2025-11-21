@@ -176,7 +176,7 @@ export default function Integrations() {
                                                     type={entry.is_secret ? 'password' : 'text'}
                                                     value={overrides[entry.key] ?? ''}
                                                     onChange={e => handleChange(entry.key, e.target.value)}
-                                                    className="w-full p-4 bg-[var(--panel)] border border-[var(--border)] text-[var(--text-main)] outline-none font-mono text-sm transition-all focus:border-[var(--primary)] placeholder:text-[var(--text-muted)]/50"
+                                                    className="w-full p-4 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none font-mono text-sm transition-all focus:border-[var(--primary)] placeholder:text-[var(--text-muted)]/50"
                                                     placeholder={
                                                         entry.is_set
                                                             ? entry.display
