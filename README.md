@@ -1,58 +1,133 @@
-# OPAS - Autonomous Personal Assistant
+# OPAS — Autonomous Personal Agent System
 
-A highly secure, locally-managed autonomous personal assistant that handles intelligent background tasks, web research, and operations. It is designed to be incredibly simple to install for beginners while offering a top-tier local development experience for hackers with a modern `Next.js` and `FastAPI` architecture.
+> A locally-hosted, privacy-first autonomous agent with a modern Next.js dashboard and FastAPI backend. Delegate tasks with a deadline and token budget — OPAS executes them in the background using a skill-based architecture, requesting your approval before any irreversible action.
 
-## 🚀 Features
+---
 
-- **Decoupled Architecture:** A beautiful Next.js Glassmorphism frontend running independently of a resilient Python FastAPI background engine.
-- **Anthropic Skill Engine:** Built on the modern AI paradigm of discrete "Skills" rather than hardcoded logical loops.
-- **Model Agnostic:** Plug in OpenAI, Anthropic, or run models locally.
-- **Persistent Memory Directives:** A local neural vault that stores context and behavioral constraints over time.
+## ✨ Features
 
-## 🛠️ Installation (For End Users)
+| Feature            | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **Skill Engine**   | Modular discrete skills (web research, email, etc.) loaded at runtime        |
+| **HITL Safety**    | Human-in-the-Loop intercepts for high-risk actions (email sends, payments)   |
+| **Knowledge Base** | Persistent long-term memory injected into every agent context                |
+| **Model Agnostic** | Works with OpenAI, Anthropic, or local Ollama models via LiteLLM             |
+| **Theme System**   | Dark / Light / Aurora themes with full CSS variable theming                  |
+| **General Config** | All credentials configurable via `.env` file or live UI override per session |
 
-The philosophy of this project is a **"One-Click Setup"** for non-technical users looking to run the agent locally.
+---
 
-1. Ensure [Python 3.10+](https://www.python.org/downloads/) and [Node.js v20+](https://nodejs.org/en) are installed on your machine.
-2. Download or clone this repository.
-3. Edit the `.env` file and add your `OPENAI_API_KEY`.
-4. Run the installer script for your Operating System:
-   - **Windows:** Double-click `install.bat`
-   - **Mac/Linux:** Run `./install.sh` in your terminal.
+## 🚀 Quick Start
 
-The installer will automatically create a secure Python Virtual Environment, install the required `pip` backend libraries, and install the `npm` frontend framework.
+### Prerequisites
 
-## 💻 Local Development & Execution
+- [Python 3.10+](https://www.python.org/downloads/)
+- [Node.js v20+](https://nodejs.org/en)
 
-To boot the OPAS assistant and access the local control panel, you only need to run one unified command.
-
-Make sure you have activated your virtual environment:
+### 1 — Clone & Configure
 
 ```bash
-# Mac/Linux
-source venv/bin/activate
-# Windows
-venv\Scripts\activate
+git clone <your-repo-url>
+cd assistant
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY at minimum
 ```
 
-Then run the intelligent development boot script:
+### 2 — Install (One-Click)
+
+| OS                | Command                               |
+| ----------------- | ------------------------------------- |
+| **Windows**       | Double-click `install.bat`            |
+| **macOS / Linux** | `chmod +x install.sh && ./install.sh` |
+
+The installer creates a Python virtual environment, installs all `pip` dependencies, and runs `npm install` for the frontend.
+
+### 3 — Run
 
 ```bash
+# Activate virtual environment first
+source venv/bin/activate       # macOS/Linux
+venv\Scripts\activate          # Windows
+
+# Launch both services
 python3 dev.py
 ```
 
-`dev.py` will automatically check for missing dependencies, silently boot the FastAPI Python background engine, and launch the Next.js `OPAS` Operations Dashboard securely at `http://localhost`.
+Open **http://localhost:3000** to access the OPAS Operations Dashboard.
 
-## 🔑 Getting Your API Keys
+---
 
-- **Telegram Bot Token:** Open the Telegram app, search for `@BotFather`, send the `/newbot` command, choose a name, and copy the HTTP API Token it provides.
-- **LLM Key:** Get an API key from [OpenAI](https://platform.openai.com/api-keys) or [Anthropic](https://console.anthropic.com/).
+## 🔑 Configuration
+
+All credentials are read from `.env` at startup. You can also override any value **live** via the **API & Integrations** panel in the UI — no restart needed.
+
+See [`.env.example`](.env.example) for all available variables with inline documentation.
+
+### Minimum required
+
+```env
+OPENAI_API_KEY=sk-...      # Or any LiteLLM-compatible key
+LLM_MODEL=gpt-4o-mini
+```
+
+### Getting your API keys
+
+| Service                | Where to get it                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| **OpenAI**             | [platform.openai.com/api-keys](https://platform.openai.com/api-keys)               |
+| **Anthropic**          | [console.anthropic.com](https://console.anthropic.com/)                            |
+| **Gmail App Password** | [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)     |
+| **Telegram Bot Token** | Message [@BotFather](https://t.me/botfather) on Telegram → `/newbot`               |
+| **Slack Bot Token**    | [api.slack.com/apps](https://api.slack.com/apps) — create app, add scopes, install |
+| **Discord Bot Token**  | [discord.com/developers/applications](https://discord.com/developers/applications) |
+
+---
+
+## 🗂️ Project Structure
+
+```
+assistant/
+├── dev.py                  # Unified boot script (starts both services)
+├── install.bat / .sh       # One-click installer scripts
+├── .env.example            # Environment variable template
+├── data/
+│   ├── assistant.db        # SQLite task/message database (auto-created)
+│   └── knowledge/
+│       └── knowledge.md    # Agent's persistent knowledge base (auto-seeded)
+└── src/
+    ├── backend/
+    │   ├── main.py         # FastAPI app + all API endpoints
+    │   ├── core.py         # LLM inference engine (LiteLLM)
+    │   ├── database.py     # SQLite helpers
+    │   ├── worker.py       # Background task executor
+    │   ├── agent.py        # Agent reasoning loop
+    │   └── skills_loader.py
+    └── frontend/
+        └── src/
+            ├── app/
+            │   ├── page.tsx        # Main SPA layout
+            │   └── globals.css     # Theme variables (Dark/Light/Aurora)
+            └── components/
+                ├── Sidebar.tsx     # Navigation, task queue, theme switcher
+                ├── Dashboard.tsx   # Task message/log viewer
+                ├── Integrations.tsx # API credential management
+                └── Knowledge.tsx   # Knowledge base editor
+```
+
+---
 
 ## 🗺️ Roadmap
 
-- [x] Fullstack Migration (Next.js + FastAPI)
-- [x] Anthropic Skills Architecture Implementation
-- [x] OPAS Branding & Dark Aurora Theme
-- [x] Automated Local Python & Node Setup Scripts
-- [ ] Implement Autonomous Tools (Web Search, File Reading)
-- [ ] Refine Cryptographic HITL (Human-in-the-Loop) Intercepts
+- [x] Next.js + FastAPI full-stack architecture
+- [x] Skill-based agent engine
+- [x] SQLite task & message persistence
+- [x] Human-in-the-Loop (HITL) approval intercepts
+- [x] Persistent Knowledge Base with auto-injection
+- [x] OPAS branding + multi-theme system (Dark / Light / Aurora)
+- [x] General config management (`.env` + live UI override)
+- [x] Immediate task trigger from queued state
+- [ ] Web search skill (Serper/DuckDuckGo)
+- [ ] File reading skill
+- [ ] Email dispatch skill (Gmail)
+- [ ] Telegram notification skill
+- [ ] Docker one-command deployment

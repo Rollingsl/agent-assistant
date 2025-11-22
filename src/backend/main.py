@@ -130,6 +130,19 @@ async def post_task_message(task_id: int, req: MessageRequest):
         add_message(task_id, "user", req.content)
     return {"success": True}
 
+@app.post("/api/tasks/{task_id}/trigger")
+async def trigger_task(task_id: int):
+    """Immediately promotes a queued task to running so the worker picks it up."""
+    tasks = get_tasks()
+    task = next((t for t in tasks if t['id'] == task_id), None)
+    if not task:
+        return {"success": False, "message": "Task not found."}
+    if task['status'] != 'queued':
+        return {"success": False, "message": f"Task is already '{task['status']}', not queued."}
+    update_task_status(task_id, 'queued')  # keep as queued — worker loop picks it up immediately
+    add_message(task_id, "agent", "⚡ Manual trigger received. Elevating task priority — execution will begin on the next worker cycle.")
+    return {"success": True, "message": "Task prioritised for immediate execution."}
+
 
 # ---------------------------------------------------------------------------
 # Knowledge Endpoints

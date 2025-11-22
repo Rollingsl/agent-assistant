@@ -31,6 +31,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [theme, setTheme] = useState<'dark' | 'light' | 'aurora'>('dark')
     const [submitting, setSubmitting] = useState(false)
+    const [triggering, setTriggering] = useState<number | null>(null)
 
     useEffect(() => {
         const currentTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora';
@@ -41,6 +42,16 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
         setTheme(newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
     };
+
+    const handleTrigger = async (e: React.MouseEvent, taskId: number) => {
+        e.stopPropagation()
+        setTriggering(taskId)
+        try {
+            await fetch(`/api/tasks/${taskId}/trigger`, { method: 'POST' })
+        } finally {
+            setTriggering(null)
+        }
+    }
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -114,8 +125,8 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                             key={item.key}
                             onClick={() => setCurrentView(item.key)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 mb-1 border-l-2 ${currentView === item.key
-                                    ? 'bg-[var(--accent)] text-[var(--text-main)] border-[var(--primary)]'
-                                    : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-main)] hover:bg-[var(--accent)]'
+                                ? 'bg-[var(--accent)] text-[var(--text-main)] border-[var(--primary)]'
+                                : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-main)] hover:bg-[var(--accent)]'
                                 }`}
                         >
                             <i className={`fa-solid ${item.icon} w-4 text-center text-sm ${currentView === item.key ? 'text-[var(--primary)]' : ''}`}></i>
@@ -159,15 +170,28 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                         key={t.id}
                                         onClick={() => { setActiveTask(t); setCurrentView('dashboard'); }}
                                         className={`p-3.5 border-l-2 cursor-pointer transition-all mb-1 ${isActive
-                                                ? 'bg-[var(--accent)] border-[var(--primary)]'
-                                                : t.status === 'waiting_for_user'
-                                                    ? 'border-[#f39c12] hover:bg-[var(--accent)]'
-                                                    : 'border-transparent hover:bg-[var(--accent)] hover:border-[var(--border)]'
+                                            ? 'bg-[var(--accent)] border-[var(--primary)]'
+                                            : t.status === 'waiting_for_user'
+                                                ? 'border-[#f39c12] hover:bg-[var(--accent)]'
+                                                : 'border-transparent hover:bg-[var(--accent)] hover:border-[var(--border)]'
                                             }`}
                                     >
-                                        <div className="flex items-center gap-1.5 mb-1.5">
-                                            <i className={`fa-solid ${sc.icon} ${t.status === 'running' ? 'fa-spin' : ''} text-[10px]`} style={{ color: sc.color }}></i>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: sc.color }}>{sc.label}</span>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <i className={`fa-solid ${sc.icon} ${t.status === 'running' ? 'fa-spin' : ''} text-[10px]`} style={{ color: sc.color }}></i>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: sc.color }}>{sc.label}</span>
+                                            </div>
+                                            {t.status === 'queued' && (
+                                                <button
+                                                    onClick={e => handleTrigger(e, t.id)}
+                                                    title="Run immediately"
+                                                    className="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--accent)] transition-all flex items-center gap-1"
+                                                >
+                                                    {triggering === t.id
+                                                        ? <i className="fa-solid fa-spinner fa-spin"></i>
+                                                        : <><i className="fa-solid fa-play text-[8px]"></i> Run</>}
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="text-sm font-semibold leading-snug text-[var(--text-main)] mb-2">{t.title}</div>
                                         <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
@@ -211,8 +235,8 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                             onClick={() => handleThemeChange(key)}
                             title={`${label} theme`}
                             className={`flex-1 py-2.5 flex flex-col items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold transition-all border ${theme === key
-                                    ? 'bg-[var(--accent)] text-[var(--primary)] border-[var(--primary)]/50'
-                                    : 'text-[var(--text-muted)] border-transparent hover:bg-[var(--accent)] hover:text-[var(--text-main)] hover:border-[var(--border)]'
+                                ? 'bg-[var(--accent)] text-[var(--primary)] border-[var(--primary)]/50'
+                                : 'text-[var(--text-muted)] border-transparent hover:bg-[var(--accent)] hover:text-[var(--text-main)] hover:border-[var(--border)]'
                                 }`}
                         >
                             <i className={`fa-solid ${icon} text-xs`}></i>
