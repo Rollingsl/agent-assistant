@@ -1,9 +1,13 @@
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel
 from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status
+
+# Load environment variables from .env file at startup
+load_dotenv()
 
 app = FastAPI()
 
