@@ -249,7 +249,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
             {/* DELEGATE TASK MODAL */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setIsModalOpen(false)}>
-                    <div className="w-full max-w-[520px] bg-[var(--panel)] border border-[var(--border)] flex flex-col animate-[popIn_0.25s_ease] max-h-[90vh] overflow-y-auto hide-scrollbar">
+                    <div className="w-full max-w-[800px] bg-[var(--panel)] border border-[var(--border)] flex flex-col animate-[popIn_0.25s_ease] max-h-[90vh] overflow-y-auto hide-scrollbar">
 
                         {/* Modal Header */}
                         <div className="px-8 py-6 border-b border-[var(--border)] flex items-center justify-between">

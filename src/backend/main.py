@@ -1,10 +1,12 @@
 import os
+import threading
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel
 from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status
+from src.backend.worker import process_background_tasks
 
 # Load environment variables from .env file at startup
 load_dotenv()
@@ -100,12 +102,20 @@ def _mask(value: str) -> str:
 # ---------------------------------------------------------------------------
 @app.on_event("startup")
 def on_startup():
+    # 1. Ensure Data & Knowledge directories exist
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(KNOWLEDGE_DIR, exist_ok=True)
     if not os.path.exists(KNOWLEDGE_PATH):
         with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_KNOWLEDGE)
+    
+    # 2. Initialize SQLite Database
     init_db()
+
+    # 3. Start Background Worker Thread
+    worker_thread = threading.Thread(target=process_background_tasks, daemon=True)
+    worker_thread.start()
+    print("[SYSTEM] Background Worker thread spawned.")
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +178,20 @@ async def update_knowledge(req: KnowledgeUpdateRequest):
 # ---------------------------------------------------------------------------
 # General Config Endpoints
 # ---------------------------------------------------------------------------
-PLACEHOLDER_SENTINELS = {"your_openai_api_key_here", "changeme", ""}
+PLACEHOLDER_SENTINELS = {
+    "your_openai_api_key_here", 
+    "changeme", 
+    "", 
+    "you@gmail.com", 
+    "xxxx xxxx xxxx xxxx",
+    "123456:ABC-DEF_your_token_here",
+    "your_telegram_bot_token_here",
+    "xoxb-your-bot-oauth-token",
+    "#general",
+    "your-workspace-name",
+    "your-discord-bot-token",
+    "123456789012345678"
+}
 
 @app.get("/api/config")
 async def get_config():
