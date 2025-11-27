@@ -34,6 +34,10 @@ def main():
     frontend_dir = os.path.join(os.getcwd(), "src", "frontend")
     backend_reqs = os.path.join(os.getcwd(), "src", "backend", "requirements.txt")
     
+    # Pre-configure environment for subprocesses
+    env = os.environ.copy()
+    env["NODE_OPTIONS"] = "--no-deprecation"
+    
     # 1. Initialize Python Backend
     if not os.path.exists("venv"):
         print(f"{C.YELLOW}[SYSTEM]{C.END} 'venv' not found. Creating Python Virtual Environment...")
@@ -64,13 +68,11 @@ def main():
     else:
         python_path = os.path.join("venv", "bin", "python")
 
-    # Redirect backend output to a hidden log file to keep the terminal clean
-    log_file = open("backend_service.log", "w")
+    # Start backend process with logs piped directly to terminal
     backend_process = subprocess.Popen(
         [python_path, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8000)"],
         cwd=os.getcwd(),
-        stdout=log_file,
-        stderr=subprocess.STDOUT
+        env=env
     )
     
     # Give the backend a second to bind to the port
@@ -81,10 +83,13 @@ def main():
     
     # We use shell=True on Windows/WSL to ensure npm resolves correctly
     # Pass -- -p 80 to force Next.js to use port 80
+    # Pass NODE_OPTIONS=--no-deprecation to suppress the harmless util._extend warning
+    
     frontend_process = subprocess.Popen(
         "npm run dev -- -p 80",
         cwd=frontend_dir,
-        shell=True
+        shell=True,
+        env=env
     )
     
     try:
@@ -95,7 +100,6 @@ def main():
         print(f"\n\n{C.YELLOW}[INFO]{C.END} Graceful Shutdown Initiated (Ctrl-C).")
         backend_process.terminate()
         frontend_process.terminate()
-        log_file.close()
         sys.exit(0)
         sys.exit(0)
 
