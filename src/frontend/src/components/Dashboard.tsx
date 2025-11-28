@@ -2,6 +2,8 @@
 
 import Logo from '@/components/Logo';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: number;
@@ -28,6 +30,7 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
   const [messages, setMessages] = useState<Message[]>([])
   const [recentTasks, setRecentTasks] = useState<Task[]>([])
   const [stats, setStats] = useState({ active: 0, completed: 0 })
+  const [isApproving, setIsApproving] = useState(false)
 
   // Fetch recent tasks + stats when no task is selected (Landing State)
   useEffect(() => {
@@ -65,12 +68,21 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
   }, [activeTask])
 
   const approveAction = async () => {
-    if (!activeTask) return;
-    await fetch(`/api/tasks/${activeTask.id}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: "ACTION: APPROVED", is_approval: true })
-    });
+    if (!activeTask || isApproving) return;
+    setIsApproving(true);
+    try {
+      await fetch(`/api/tasks/${activeTask.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: "ACTION: APPROVED", is_approval: true })
+      });
+      // Give a tiny delay for backend to ingest before polling resumes
+      await new Promise(r => setTimeout(r, 500));
+    } catch (e) {
+      console.error("Approval failed", e);
+    } finally {
+      setIsApproving(false);
+    }
   }
 
   // ── LANDING STATE (IMMERIVE "COMMAND CENTER") ──
@@ -160,8 +172,8 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
                     <div className="flex justify-between items-start mb-4">
                       <span className="bg-[var(--accent)] text-[var(--primary)] text-[10px] font-bold px-2 py-1 border border-[var(--primary)]/20">OP-{t.id}</span>
                       <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border ${t.status === 'completed' ? 'text-[#10a37f] border-[#10a37f]/20 bg-[#10a37f]/5' :
-                          t.status === 'waiting_for_user' ? 'text-[#f39c12] border-[#f39c12]/20 bg-[#f39c12]/5' :
-                            'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--accent)]'
+                        t.status === 'waiting_for_user' ? 'text-[#f39c12] border-[#f39c12]/20 bg-[#f39c12]/5' :
+                          'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--accent)]'
                         }`}>
                         {t.status.replace(/_/g, ' ')}
                       </span>
@@ -230,20 +242,36 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
                 <i className={`fa-solid ${m.sender === 'user' ? 'fa-user' : 'fa-robot'}`}></i>
               </div>
 
-              <div className={`max-w-[85%] px-6 py-4 border whitespace-pre-wrap leading-relaxed text-[15px] transition-colors duration-500 ${m.sender === 'user'
+              <div className={`max-w-[85%] px-6 py-4 border leading-relaxed text-[15px] transition-colors duration-500 ${m.sender === 'user'
                 ? 'bg-[var(--accent)] border-[var(--primary)]/30 text-[var(--text-main)] shadow-[0_4px_15px_rgba(0,242,254,0.05)]'
                 : 'bg-[var(--panel)] border-[var(--border)] text-[var(--text-main)] shadow-[0_4px_15px_rgba(0,0,0,0.1)]'
                 }`}>
-                {m.content}
+
+                <div className="prose prose-invert max-w-none agent-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {m.content}
+                  </ReactMarkdown>
+                </div>
 
                 {m.is_approval_request && (
-                  <div className="mt-6 p-6 bg-[#f39c12]/5 border border-[#f39c12] flex flex-col gap-4 animate-[pulse_3s_infinite]">
+                  <div className="mt-6 p-6 bg-[#f39c12]/5 border border-[#f39c12] flex flex-col gap-4 animate-[pulse_3s_infinite] relative overflow-hidden group/intercept">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl transform translate-x-3 -translate-y-3">
+                      <i className="fa-solid fa-fingerprint"></i>
+                    </div>
                     <h4 className="text-[#f39c12] font-black text-xs tracking-[0.2em] uppercase m-0 flex items-center gap-3">
                       <i className="fa-solid fa-shield-halved"></i> Cryptographic Intercept
                     </h4>
-                    <p className="text-[15px] text-[var(--text-muted)] leading-relaxed transition-colors duration-500">Autonomous execution has reached a high-consequence boundary. Review the tactical summary above and provide verification to proceed.</p>
-                    <button onClick={approveAction} className="self-start px-8 py-3 bg-[#f39c12] text-black font-black uppercase tracking-widest text-[13px] hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3">
-                      <i className="fa-solid fa-fingerprint text-lg"></i> Grant Verified Approval
+                    <p className="text-[14px] text-[var(--text-muted)] leading-relaxed transition-colors duration-500 max-w-lg">Autonomous execution has reached a high-consequence boundary. Review the tactical summary above and provide verification to proceed.</p>
+                    <button
+                      onClick={approveAction}
+                      disabled={isApproving}
+                      className={`self-start px-8 py-3 bg-[#f39c12] text-black font-black uppercase tracking-widest text-[13px] hover:opacity-90 transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isApproving ? (
+                        <><i className="fa-solid fa-spinner fa-spin text-lg"></i> Verifying...</>
+                      ) : (
+                        <><i className="fa-solid fa-fingerprint text-lg"></i> Grant Verified Approval</>
+                      )}
                     </button>
                   </div>
                 )}
