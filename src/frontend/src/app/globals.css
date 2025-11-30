@@ -1,15 +1,8 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-brand-primary: var(--primary);
-  --color-brand-hover: var(--hover);
-  --color-brand-bg: var(--bg);
-  --color-panel-bg: var(--panel);
-  --color-panel-border: var(--border);
-  --color-text-main: var(--text-main);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-
+:root {
   --font-sans: "Outfit", sans-serif;
 }
 
