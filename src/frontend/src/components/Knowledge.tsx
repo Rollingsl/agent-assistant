@@ -62,8 +62,8 @@ export default function KnowledgeBase() {
                     placeholder="Enter permanent rules, constraints, API docs, or operational context here..."
                     spellCheck="false"
                 />
-                <div className="absolute right-6 bottom-8 text-[10px] text-[var(--primary)] font-bold uppercase tracking-widest bg-[var(--accent)] border border-[var(--primary)]/20 px-2.5 py-1 transition-colors duration-500 pointer-events-none">
-                    data/knowledge/knowledge.md
+                <div className="absolute right-6 bottom-8 text-[9px] text-[var(--primary)] font-black uppercase tracking-[0.2em] opacity-40 transition-colors duration-500 pointer-events-none">
+                    <i className="fa-solid fa-file-code mr-1.5"></i> data/knowledge/knowledge.md
                 </div>
             </div>
         </div>

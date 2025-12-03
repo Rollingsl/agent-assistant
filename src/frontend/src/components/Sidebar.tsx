@@ -112,23 +112,23 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                 {/* Collapse Toggle Button (Floating) */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-24 w-6 h-6 bg-[var(--panel)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--primary)] text-[10px] flex items-center justify-center rounded-full opacity-0 group-hover/sidebar:opacity-100 transition-all z-50 shadow-lg"
+                    className="absolute -right-3 top-10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-all z-10"
                 >
-                    <i className={`fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
+                    <i className={`fa-solid ${isCollapsed ? 'fa-square-caret-right' : 'fa-square-caret-left'} text-lg`}></i>
                 </button>
 
                 {/* Header / Brand */}
                 <div className={`p-6 border-b border-[var(--border)] flex flex-col gap-1 transition-all ${isCollapsed ? 'items-center px-0' : ''}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[var(--primary)] text-black shrink-0 relative overflow-hidden">
-                            <Logo size={20} />
+                        <div className="flex items-center justify-center text-[var(--primary)] shrink-0 overflow-hidden">
+                            <Logo size={24} />
                         </div>
                         {!isCollapsed && (
                             <h1 className="text-xl font-black tracking-tighter text-[var(--text-main)] transition-all">OPAS</h1>
                         )}
                     </div>
                     {!isCollapsed && (
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)]">Autonomous Agent</span>
+                        <span className="text-[9px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-70">Autonomous Agent</span>
                     )}
                 </div>
 
@@ -138,7 +138,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                         <button
                             key={item.key}
                             onClick={() => setCurrentView(item.key)}
-                            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-4' : 'gap-4 px-6 py-3.5'} text-sm font-bold uppercase tracking-widest transition-all ${currentView === item.key
+                            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-4' : 'gap-4 px-6 py-3'} text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${currentView === item.key
                                 ? 'bg-[var(--accent)] text-[var(--primary)] border-r-2 border-[var(--primary)]'
                                 : 'text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text-main)]'
                                 }`}
@@ -154,10 +154,10 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                 <div className={`${isCollapsed ? 'px-2' : 'px-4'} mt-2 mb-4`}>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className={`w-full py-3 border border-[var(--primary)]/40 text-[var(--primary)] text-sm font-bold uppercase tracking-widest hover:bg-[var(--accent)] hover:border-[var(--primary)] transition-all flex items-center justify-center gap-2`}
+                        className={`w-full py-3 border border-[var(--primary)]/30 text-[var(--primary)] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[var(--accent)] hover:border-[var(--primary)] transition-all flex items-center justify-center gap-2`}
                         title={isCollapsed ? "Delegate Task" : ""}
                     >
-                        <i className="fa-solid fa-plus text-xs"></i> {!isCollapsed && "Delegate Task"}
+                        <i className="fa-solid fa-plus text-[10px]"></i> {!isCollapsed && "Delegate Task"}
                     </button>
                 </div>
 
@@ -214,10 +214,10 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                         </div>
                                         {!isCollapsed && (
                                             <>
-                                                <div className="text-sm font-semibold leading-snug text-[var(--text-main)] mb-2 whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
-                                                <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
-                                                    <span><i className="fa-solid fa-microchip mr-1 text-[9px]"></i>{t.budget.toLocaleString()}</span>
-                                                    <span><i className="fa-regular fa-calendar mr-1 text-[9px]"></i>{t.deadline || '—'}</span>
+                                                <div className="text-[13px] font-bold leading-snug text-[var(--text-main)] mb-2 whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
+                                                <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono tracking-tighter">
+                                                    <span className="opacity-80"><i className="fa-solid fa-microchip mr-1 text-[8px] opacity-50"></i>{t.budget.toLocaleString()}</span>
+                                                    <span className="opacity-80"><i className="fa-regular fa-calendar mr-1 text-[8px] opacity-50"></i>{t.deadline || '—'}</span>
                                                 </div>
                                             </>
                                         )}
@@ -238,7 +238,12 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                             onClick={() => { setActiveTask(t); setCurrentView('dashboard'); }}
                                             className={`p-3 opacity-60 hover:opacity-100 cursor-pointer transition-all border-l-2 ${activeTask?.id === t.id ? 'bg-[var(--accent)] border-[var(--primary)]' : 'border-transparent hover:border-[var(--border)]'}`}
                                         >
-                                            <div className="text-sm font-semibold leading-snug text-[var(--text-main)] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="shrink-0 flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+                                                    <i className={`fa-solid ${t.status === 'completed' ? 'fa-circle-check' : t.status === 'waiting_for_user' ? 'fa-circle-exclamation' : 'fa-circle-dot'} text-lg`}></i>
+                                                </div>
+                                                <div className="text-sm font-semibold leading-snug text-[var(--text-main)] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
+                                            </div>
                                         </div>
                                     ))}
                                 </>
@@ -249,7 +254,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
 
                 {/* Theme & Footer Area */}
                 <div className={`p-6 border-t border-[var(--border)] flex flex-col gap-4 transition-all ${isCollapsed ? 'items-center px-0' : ''}`}>
-                    {!isCollapsed && <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mb-1">Perspective</div>}
+                    {!isCollapsed && <div className="text-[9px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-70 mb-1">Perspective</div>}
                     <div className={`flex ${isCollapsed ? 'flex-col gap-3' : 'justify-between'} items-center`}>
                         {themes.map(t => (
                             <button

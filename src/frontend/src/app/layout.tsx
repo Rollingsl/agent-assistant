@@ -1,8 +1,18 @@
 import type { Metadata } from 'next'
-import { Outfit } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'OPAS | Autonomous Assistant',
@@ -15,11 +25,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className={`${inter.variable} ${mono.variable}`}>
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
       </head>
-      <body className={`${outfit.variable} antialiased overflow-hidden`}>
+      <body className="antialiased overflow-hidden font-sans">
         {children}
       </body>
     </html>

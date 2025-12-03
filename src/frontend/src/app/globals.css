@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Outfit", sans-serif;
+  --font-sans: var(--font-inter);
 }
 
 @layer base {

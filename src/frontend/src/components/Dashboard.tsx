@@ -98,53 +98,55 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
 
           {/* Welcome Header */}
           <div className="flex justify-between items-start">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="p-3 bg-[var(--panel)] border border-[var(--primary)]/20 text-[var(--primary)] shadow-[0_0_20px_rgba(0,242,254,0.1)]">
-                  <Logo size={32} />
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center gap-4">
+                <div className="text-[var(--primary)]">
+                  <Logo size={48} />
                 </div>
-                <h1 className="text-5xl font-black tracking-tight text-[var(--text-main)] transition-colors duration-500">Command Center</h1>
+                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[var(--text-main)] transition-colors duration-500">Command Center</h1>
               </div>
-              <p className="text-[var(--text-muted)] text-lg max-w-xl transition-colors duration-500">Systems operative. Autonomous PERSONAL Assistant is standing by for new tactical delegations.</p>
+              <p className="text-[var(--text-muted)] text-md md:text-lg max-w-xl transition-colors duration-500 font-medium">Systems operative. Autonomous PERSONAL Assistant is standing by for new tactical delegations.</p>
             </div>
-            <div className="flex items-center gap-6 bg-[var(--panel)] px-8 py-5 border border-[var(--border)] transition-colors duration-500">
+            <div className="flex items-center gap-6 bg-[var(--panel)] px-8 py-5 border border-[var(--border)] transition-colors duration-500 shadow-sm">
               <div className="flex flex-col items-center">
-                <span className="text-[var(--primary)] text-2xl font-black tabular-nums">{stats.active}</span>
-                <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">Active</span>
+                <span className="text-[var(--primary)] text-2xl font-black tabular-nums font-mono">{stats.active}</span>
+                <span className="text-[8px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] mt-1.5 opacity-60">Active</span>
               </div>
               <div className="w-[1px] h-8 bg-[var(--border)]"></div>
               <div className="flex flex-col items-center">
-                <span className="text-[var(--text-main)] text-2xl font-black tabular-nums opacity-60 transition-colors duration-500">{stats.completed}</span>
-                <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">Finished</span>
+                <span className="text-[var(--text-main)] text-2xl font-black tabular-nums opacity-60 transition-colors duration-500 font-mono">{stats.completed}</span>
+                <span className="text-[8px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] mt-1.5 opacity-60">Finished</span>
               </div>
             </div>
           </div>
 
           {/* Operational Status Sub-header */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-4 group hover:border-[var(--primary)]/40 transition-all duration-500">
-              <div className="w-10 h-10 flex items-center justify-center bg-[var(--accent)] border border-[var(--primary)]/10 text-[var(--primary)]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-5 group hover:border-[var(--primary)]/40 transition-all duration-500">
+              <div className="text-[var(--primary)] text-xl shrink-0">
                 <i className="fa-solid fa-microchip"></i>
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Neural Load</div>
-                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500">Dynamic Balancing</div>
+                <div className="text-[8px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-60">Neural Load</div>
+                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500 font-mono">DYNAMIC_BALANCING</div>
               </div>
             </div>
-            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-4 group hover:border-[var(--primary)]/40 transition-all duration-500">
-              <div className="w-10 h-10 flex items-center justify-center bg-[var(--accent)] border border-[var(--primary)]/10 text-[var(--primary)]">
+            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-5 group hover:border-[var(--primary)]/40 transition-all duration-500">
+              <div className="text-[var(--primary)] text-xl shrink-0">
                 <i className="fa-solid fa-shield-halved"></i>
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Encryption</div>
-                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500">AES-256 Active</div>
+                <div className="text-[8px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-60">Encryption</div>
+                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500 font-mono">AES_256_ACTIVE</div>
               </div>
             </div>
-            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-4 group hover:border-[var(--primary)]/40 transition-all duration-500">
-              <i className="fa-solid fa-circle text-[6px] text-[#10a37f] animate-pulse"></i>
+            <div className="p-6 bg-[var(--panel)] border border-[var(--border)] flex items-center gap-5 group hover:border-[var(--primary)]/40 transition-all duration-500">
+              <div className="text-[var(--primary)] text-xl shrink-0">
+                <i className="fa-solid fa-server"></i>
+              </div>
               <div>
-                <div className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">API Status</div>
-                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500">OpenAI: Operational</div>
+                <div className="text-[8px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-60">API Status</div>
+                <div className="text-sm font-bold text-[var(--text-main)] transition-colors duration-500 font-mono uppercase tracking-tight">OpenAI: Operational</div>
               </div>
             </div>
           </div>
@@ -170,18 +172,18 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
                     className="bg-[var(--panel)] border border-[var(--border)] p-6 group cursor-pointer hover:border-[var(--primary)]/50 hover:bg-[var(--bg)] transition-all duration-300"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="bg-[var(--accent)] text-[var(--primary)] text-[10px] font-bold px-2 py-1 border border-[var(--primary)]/20">OP-{t.id}</span>
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border ${t.status === 'completed' ? 'text-[#10a37f] border-[#10a37f]/20 bg-[#10a37f]/5' :
-                        t.status === 'waiting_for_user' ? 'text-[#f39c12] border-[#f39c12]/20 bg-[#f39c12]/5' :
-                          'text-[var(--primary)] border-[var(--primary)]/20 bg-[var(--accent)]'
+                      <span className="text-[var(--primary)] text-[9px] font-black font-mono opacity-80 uppercase tracking-[0.1em]">OP-{t.id}</span>
+                      <span className={`text-[8px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${t.status === 'completed' ? 'text-[#10a37f]' :
+                        t.status === 'waiting_for_user' ? 'text-[#f39c12]' :
+                          'text-[var(--primary)]'
                         }`}>
-                        {t.status.replace(/_/g, ' ')}
+                        <i className="fa-solid fa-circle text-[4px]"></i> {t.status.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <h4 className="text-lg font-bold mb-3 group-hover:text-[var(--primary)] transition-colors text-[var(--text-main)] transition-colors duration-500">{t.title}</h4>
-                    <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] font-mono transition-colors duration-500">
-                      <span className="flex items-center gap-1.5"><i className="fa-solid fa-microchip text-[10px] opacity-60"></i>{t.budget.toLocaleString()}</span>
-                      <span className="flex items-center gap-1.5"><i className="fa-regular fa-calendar text-[10px] opacity-60"></i>{t.deadline || '--/--'}</span>
+                    <h4 className="text-md font-bold mb-3 group-hover:text-[var(--primary)] transition-colors text-[var(--text-main)] transition-colors duration-500 leading-tight">{t.title}</h4>
+                    <div className="flex items-center gap-4 text-[10px] text-[var(--text-muted)] font-mono transition-colors duration-500 tracking-tighter">
+                      <span className="flex items-center gap-1.5"><i className="fa-solid fa-microchip text-[9px] opacity-40"></i>{t.budget.toLocaleString()}</span>
+                      <span className="flex items-center gap-1.5"><i className="fa-regular fa-calendar text-[9px] opacity-40"></i>{t.deadline || '--/--'}</span>
                     </div>
                   </div>
                 ))}
@@ -214,12 +216,12 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-1.5 border ${statusColor}`}>
-            <i className={`fa-solid mr-1 ${activeTask.status === 'running' ? 'fa-spinner fa-spin' : activeTask.status === 'completed' ? 'fa-check' : activeTask.status === 'waiting_for_user' ? 'fa-hand-paper' : 'fa-clock'}`}></i>
+          <span className={`text-[9px] font-black tracking-[0.2em] uppercase flex items-center gap-1.5 ${activeTask.status === 'completed' ? 'text-[#10a37f]' : activeTask.status === 'waiting_for_user' ? 'text-[#f39c12]' : 'text-[var(--primary)]'}`}>
+            <i className={`fa-solid ${activeTask.status === 'running' ? 'fa-spinner fa-spin' : activeTask.status === 'completed' ? 'fa-check' : activeTask.status === 'waiting_for_user' ? 'fa-hand-paper' : 'fa-clock'}`}></i>
             {activeTask.status.replace(/_/g, ' ')}
           </span>
-          <span className="text-[var(--primary)] font-mono text-[10px] font-bold tracking-widest py-1.5 px-3 bg-[var(--accent)] border border-[var(--primary)]/30">
-            OP-{activeTask.id}
+          <span className="text-[var(--primary)] font-mono text-[9px] font-black tracking-[0.2em] opacity-80">
+            / OP-{activeTask.id}
           </span>
         </div>
       </div>
@@ -258,14 +260,14 @@ export default function Dashboard({ activeTask, setActiveTask }: DashboardProps)
                     <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl transform translate-x-3 -translate-y-3">
                       <i className="fa-solid fa-fingerprint"></i>
                     </div>
-                    <h4 className="text-[#f39c12] font-black text-xs tracking-[0.2em] uppercase m-0 flex items-center gap-3">
+                    <h4 className="text-[#f39c12] font-black text-[10px] tracking-[0.3em] uppercase m-0 flex items-center gap-3">
                       <i className="fa-solid fa-shield-halved"></i> Cryptographic Intercept
                     </h4>
-                    <p className="text-[14px] text-[var(--text-muted)] leading-relaxed transition-colors duration-500 max-w-lg">Autonomous execution has reached a high-consequence boundary. Review the tactical summary above and provide verification to proceed.</p>
+                    <p className="text-[14px] text-[var(--text-muted)] leading-relaxed transition-colors duration-500 max-w-lg font-medium">Autonomous execution has reached a high-consequence boundary. Review the tactical summary above and provide verification to proceed.</p>
                     <button
                       onClick={approveAction}
                       disabled={isApproving}
-                      className={`self-start px-8 py-3 bg-[#f39c12] text-black font-black uppercase tracking-widest text-[13px] hover:opacity-90 transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className={`self-start px-8 py-3 bg-[#f39c12] text-black font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {isApproving ? (
                         <><i className="fa-solid fa-spinner fa-spin text-lg"></i> Verifying...</>

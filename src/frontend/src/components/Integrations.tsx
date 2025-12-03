@@ -35,8 +35,8 @@ function SourceBadge({ source }: { source: string }) {
     const label = { env: '● .env file', override: '● UI override', unset: '○ Not set' }[source] ?? source
 
     return (
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 border ${styles}`}>
-            {label}
+        <span className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${styles.replace(/bg-.*|border-.*/g, '')}`}>
+            <span className="text-[6px]">●</span> {label.replace('● ', '')}
         </span>
     )
 }
@@ -145,15 +145,15 @@ export default function Integrations() {
                                     </div>
                                 </div>
                                 {/* Group status summary */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     {entries.filter(e => e.is_set).length === entries.length && entries.length > 0 && (
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#10a37f] border border-[#10a37f]/40 bg-[#10a37f]/10 px-2 py-1">
-                                            <i className="fa-solid fa-circle-check mr-1"></i> Configured
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#10a37f] flex items-center gap-1.5">
+                                            <i className="fa-solid fa-circle-check"></i> Configured
                                         </span>
                                     )}
                                     {entries.some(e => !e.is_set) && (
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#f39c12] border border-[#f39c12]/40 bg-[#f39c12]/10 px-2 py-1">
-                                            <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f39c12] flex items-center gap-1.5">
+                                            <i className="fa-solid fa-triangle-exclamation"></i>
                                             {entries.filter(e => !e.is_set).length} missing
                                         </span>
                                     )}
