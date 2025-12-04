@@ -18,40 +18,49 @@ interface SidebarProps {
     setActiveTask: (task: Task) => void;
 }
 
-const STATUS_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-    queued: { icon: 'fa-clock', color: 'var(--text-muted)', label: 'Queued' },
-    running: { icon: 'fa-spinner', color: 'var(--primary)', label: 'Running' },
-    waiting_for_user: { icon: 'fa-hand-paper', color: '#f39c12', label: 'Awaiting Approval' },
-    completed: { icon: 'fa-check', color: '#10a37f', label: 'Completed' },
-    approved: { icon: 'fa-check-double', color: '#10a37f', label: 'Approved' },
+const STATUS_CONFIG: Record<string, { icon: string; color: string; rgb: string; label: string }> = {
+    queued:           { icon: 'fa-clock',         color: 'var(--text-muted)',  rgb: '74,94,114',    label: 'Queued' },
+    running:          { icon: 'fa-spinner',        color: 'var(--primary)',     rgb: 'var(--primary-rgb)', label: 'Running' },
+    waiting_for_user: { icon: 'fa-hand-paper',     color: 'var(--warning)',     rgb: 'var(--warning-rgb)',  label: 'Approval' },
+    completed:        { icon: 'fa-check',          color: 'var(--success)',     rgb: 'var(--success-rgb)',  label: 'Complete' },
+    approved:         { icon: 'fa-check-double',   color: 'var(--success)',     rgb: 'var(--success-rgb)',  label: 'Approved' },
 }
 
+const THEMES = [
+    { key: 'dark',   color: '#00e5ff', label: 'Neural Abyss' },
+    { key: 'light',  color: '#0284c7', label: 'Clean Slate' },
+    { key: 'aurora', color: '#f43f5e', label: 'Rose Nebula' },
+] as const
+
+const NAV_ITEMS = [
+    { key: 'dashboard',    icon: 'fa-satellite-dish', label: 'Operations' },
+    { key: 'integrations', icon: 'fa-server',         label: 'Integrations' },
+    { key: 'knowledge',    icon: 'fa-brain',           label: 'Knowledge' },
+] as const
+
 export default function Sidebar({ currentView, setCurrentView, activeTask, setActiveTask }: SidebarProps) {
-    const [tasks, setTasks] = useState<Task[]>([])
+    const [tasks, setTasks]         = useState<Task[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [theme, setTheme] = useState<'dark' | 'light' | 'aurora'>('dark')
+    const [theme, setTheme]         = useState<'dark' | 'light' | 'aurora'>('dark')
     const [submitting, setSubmitting] = useState(false)
     const [triggering, setTriggering] = useState<number | null>(null)
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     useEffect(() => {
-        const currentTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora';
-        if (currentTheme) setTheme(currentTheme);
+        const t = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora';
+        if (t) setTheme(t);
     }, []);
 
-    const handleThemeChange = (newTheme: 'dark' | 'light' | 'aurora') => {
-        setTheme(newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
+    const handleThemeChange = (t: 'dark' | 'light' | 'aurora') => {
+        setTheme(t);
+        document.documentElement.setAttribute('data-theme', t);
     };
 
     const handleTrigger = async (e: React.MouseEvent, taskId: number) => {
         e.stopPropagation()
         setTriggering(taskId)
-        try {
-            await fetch(`/api/tasks/${taskId}/trigger`, { method: 'POST' })
-        } finally {
-            setTriggering(null)
-        }
+        try { await fetch(`/api/tasks/${taskId}/trigger`, { method: 'POST' }) }
+        finally { setTriggering(null) }
     }
 
     useEffect(() => {
@@ -60,26 +69,12 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                 const res = await fetch('/api/tasks')
                 const data = await res.json()
                 if (data.tasks) setTasks(data.tasks)
-            } catch (err) {
-                console.error("Failed to fetch tasks")
-            }
+            } catch { /* silent */ }
         }
         fetchTasks()
-        const interval = setInterval(fetchTasks, 3000)
-        return () => clearInterval(interval)
+        const iv = setInterval(fetchTasks, 3000)
+        return () => clearInterval(iv)
     }, [])
-
-    const navItems = [
-        { key: 'dashboard', icon: 'fa-satellite-dish', label: 'Operations Board' },
-        { key: 'integrations', icon: 'fa-server', label: 'API & Integrations' },
-        { key: 'knowledge', icon: 'fa-book-open-reader', label: 'Knowledge Base' },
-    ] as const
-
-    const themes = [
-        { key: 'dark', icon: 'fa-moon', label: 'Dark' },
-        { key: 'light', icon: 'fa-sun', label: 'Light' },
-        { key: 'aurora', icon: 'fa-wand-magic-sparkles', label: 'Aurora' },
-    ] as const
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -90,10 +85,10 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: fd.get('title'),
+                    title:       fd.get('title'),
                     description: fd.get('description'),
-                    deadline: fd.get('deadline'),
-                    budget: parseInt(fd.get('budget') as string, 10)
+                    deadline:    fd.get('deadline'),
+                    budget:      parseInt(fd.get('budget') as string, 10),
                 })
             })
         } finally {
@@ -102,253 +97,467 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
         }
     }
 
-    const activeTasks = tasks.filter(t => !['completed'].includes(t.status))
+    const activeTasks    = tasks.filter(t => t.status !== 'completed')
     const completedTasks = tasks.filter(t => t.status === 'completed')
 
     return (
         <>
-            <aside className={`${isCollapsed ? 'w-20' : 'w-72'} h-full bg-[var(--panel)] border-r border-[var(--border)] flex flex-col shrink-0 transition-all duration-300 z-40 relative group/sidebar`}>
-
-                {/* Collapse Toggle Button (Floating) */}
+            {/* ─── SIDEBAR ─────────────────────────────────────── */}
+            <aside
+                className={`${isCollapsed ? 'w-[72px]' : 'w-[268px]'} h-full flex flex-col shrink-0 transition-all duration-300 z-40 relative`}
+                style={{ background: 'var(--panel)', borderRight: '1px solid var(--border)' }}
+            >
+                {/* Collapse toggle */}
                 <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-all z-10"
+                    onClick={() => setIsCollapsed(v => !v)}
+                    title={isCollapsed ? 'Expand' : 'Collapse'}
+                    className="absolute -right-3 top-[52px] w-6 h-6 flex items-center justify-center z-10 transition-all hover:scale-110"
+                    style={{
+                        background: 'var(--panel-2)',
+                        border: '1px solid var(--border-hover)',
+                        color: 'var(--text-muted)',
+                    }}
                 >
-                    <i className={`fa-solid ${isCollapsed ? 'fa-square-caret-right' : 'fa-square-caret-left'} text-lg`}></i>
+                    <i className={`fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-[9px]`}></i>
                 </button>
 
-                {/* Header / Brand */}
-                <div className={`p-6 border-b border-[var(--border)] flex flex-col gap-1 transition-all ${isCollapsed ? 'items-center px-0' : ''}`}>
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center text-[var(--primary)] shrink-0 overflow-hidden">
-                            <Logo size={24} />
-                        </div>
-                        {!isCollapsed && (
-                            <h1 className="text-xl font-black tracking-tighter text-[var(--text-main)] transition-all">OPAS</h1>
-                        )}
+                {/* ── Brand Header ── */}
+                <div
+                    className={`flex items-center gap-3 shrink-0 transition-all duration-300 ${isCollapsed ? 'px-0 justify-center py-5' : 'px-5 py-5'}`}
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                >
+                    <div className="shrink-0 relative" style={{ color: 'var(--primary)' }}>
+                        <Logo size={26} />
+                        {/* Live status dot */}
+                        <span
+                            className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full"
+                            style={{
+                                background: 'var(--success)',
+                                boxShadow: '0 0 6px rgba(var(--success-rgb), 0.8)',
+                                animation: 'breathe 2.5s ease-in-out infinite',
+                            }}
+                        />
                     </div>
                     {!isCollapsed && (
-                        <span className="text-[9px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-70">Autonomous Agent</span>
+                        <div className="flex flex-col leading-none">
+                            <span className="text-[15px] font-black tracking-tight" style={{ color: 'var(--text-main)' }}>OPAS</span>
+                            <span className="text-[9px] font-bold uppercase tracking-[0.22em] mt-0.5" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>Neural Agent</span>
+                        </div>
                     )}
                 </div>
 
-                {/* Navigation */}
-                <nav className="px-3 pt-4 pb-2">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.key}
-                            onClick={() => setCurrentView(item.key)}
-                            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-4' : 'gap-4 px-6 py-3'} text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${currentView === item.key
-                                ? 'bg-[var(--accent)] text-[var(--primary)] border-r-2 border-[var(--primary)]'
-                                : 'text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text-main)]'
-                                }`}
-                            title={isCollapsed ? item.label : ''}
-                        >
-                            <i className={`fa-solid ${item.icon} w-4 text-center text-sm ${currentView === item.key ? 'text-[var(--primary)]' : ''}`}></i>
-                            {!isCollapsed && item.label}
-                        </button>
-                    ))}
+                {/* ── Navigation ── */}
+                <nav className={`pt-3 pb-2 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+                    {NAV_ITEMS.map(item => {
+                        const isActive = currentView === item.key
+                        return (
+                            <button
+                                key={item.key}
+                                onClick={() => setCurrentView(item.key)}
+                                title={isCollapsed ? item.label : ''}
+                                className={`w-full flex items-center gap-3 transition-all duration-200 mb-0.5 relative group ${isCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-2.5'}`}
+                                style={{
+                                    background: isActive ? 'var(--accent)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                                }}
+                                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'var(--accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-main)'; } }}
+                                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; } }}
+                            >
+                                {/* Active indicator bar */}
+                                {isActive && (
+                                    <span
+                                        className="absolute left-0 top-1 bottom-1 w-[3px]"
+                                        style={{ background: 'var(--primary)', boxShadow: 'var(--glow-sm)' }}
+                                    />
+                                )}
+                                <i className={`fa-solid ${item.icon} text-[13px] w-4 text-center shrink-0`}></i>
+                                {!isCollapsed && (
+                                    <span className="text-[11px] font-bold uppercase tracking-[0.12em]">{item.label}</span>
+                                )}
+                            </button>
+                        )
+                    })}
                 </nav>
 
-                {/* Delegate Button */}
-                <div className={`${isCollapsed ? 'px-2' : 'px-4'} mt-2 mb-4`}>
+                {/* ── Delegate Button ── */}
+                <div className={`${isCollapsed ? 'px-2' : 'px-3'} pb-3 pt-1`}>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className={`w-full py-3 border border-[var(--primary)]/30 text-[var(--primary)] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[var(--accent)] hover:border-[var(--primary)] transition-all flex items-center justify-center gap-2`}
-                        title={isCollapsed ? "Delegate Task" : ""}
+                        title={isCollapsed ? 'Delegate Task' : ''}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 font-black uppercase transition-all duration-200 text-[10px] tracking-[0.18em] group"
+                        style={{
+                            border: '1px solid rgba(var(--primary-rgb), 0.3)',
+                            color: 'var(--primary)',
+                            background: 'rgba(var(--primary-rgb), 0.04)',
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(var(--primary-rgb), 0.1)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.6)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--glow-sm)';
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(var(--primary-rgb), 0.04)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                        }}
                     >
-                        <i className="fa-solid fa-plus text-[10px]"></i> {!isCollapsed && "Delegate Task"}
+                        <i className="fa-solid fa-plus text-[11px]"></i>
+                        {!isCollapsed && 'New Mission'}
                     </button>
                 </div>
 
-                {/* Task Queue Section Header */}
+                <div style={{ borderTop: '1px solid var(--border)' }} />
+
+                {/* ── Queue header ── */}
                 {!isCollapsed && (
-                    <div className="px-4 mb-2 flex items-center justify-between">
-                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Active Queue</span>
+                    <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)' }}>Queue</span>
                         {activeTasks.length > 0 && (
-                            <span className="text-[10px] font-bold text-[var(--primary)] bg-[var(--accent)] border border-[var(--primary)]/30 px-1.5 py-0.5 tabular-nums">{activeTasks.length}</span>
+                            <span
+                                className="text-[9px] font-black tabular-nums px-1.5 py-0.5"
+                                style={{
+                                    color: 'var(--primary)',
+                                    background: 'var(--accent)',
+                                    border: '1px solid rgba(var(--primary-rgb), 0.25)',
+                                }}
+                            >
+                                {activeTasks.length}
+                            </span>
                         )}
                     </div>
                 )}
 
-                {/* Queue Content */}
-                <div className="flex-grow overflow-y-auto hide-scrollbar flex flex-col gap-0 mx-3 mb-2">
+                {/* ── Task List ── */}
+                <div className="flex-grow overflow-y-auto hide-scrollbar flex flex-col gap-0 pb-2">
                     {tasks.length === 0 ? (
-                        <div className="text-center py-10 text-[var(--text-muted)] text-xs flex flex-col items-center gap-2">
-                            <i className="fa-regular fa-clock text-xl opacity-40"></i>
-                            {!isCollapsed && "Queue is empty"}
+                        <div className="flex flex-col items-center justify-center py-10 gap-2" style={{ color: 'var(--text-muted)' }}>
+                            <i className="fa-regular fa-circle-dot text-xl opacity-30"></i>
+                            {!isCollapsed && <span className="text-[11px] font-medium">Queue is empty</span>}
                         </div>
                     ) : (
                         <>
-                            {activeTasks.map(t => {
-                                const sc = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.queued
-                                const isActive = activeTask?.id === t.id
-                                return (
-                                    <div
-                                        key={t.id}
-                                        onClick={() => { setActiveTask(t); setCurrentView('dashboard'); }}
-                                        className={`cursor-pointer transition-all border-l-2 ${isCollapsed ? 'p-3 flex justify-center' : 'p-3.5 mb-1'} ${isActive
-                                            ? 'bg-[var(--accent)] border-[var(--primary)]'
-                                            : t.status === 'waiting_for_user'
-                                                ? 'border-[#f39c12] hover:bg-[var(--accent)]'
-                                                : 'border-transparent hover:bg-[var(--accent)] hover:border-[var(--border)]'
-                                            }`}
-                                        title={isCollapsed ? t.title : ''}
-                                    >
-                                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between mb-1.5'}`}>
-                                            <div className="flex items-center gap-1.5">
-                                                <i className={`fa-solid ${sc.icon} ${t.status === 'running' ? 'fa-spin' : ''} text-[10px]`} style={{ color: sc.color }}></i>
-                                                {!isCollapsed && <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: sc.color }}>{sc.label}</span>}
-                                            </div>
-                                            {!isCollapsed && t.status === 'queued' && (
-                                                <button
-                                                    onClick={e => handleTrigger(e, t.id)}
-                                                    title="Run immediately"
-                                                    className="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--accent)] transition-all flex items-center gap-1"
-                                                >
-                                                    {triggering === t.id
-                                                        ? <i className="fa-solid fa-spinner fa-spin"></i>
-                                                        : <><i className="fa-solid fa-play text-[8px]"></i> Run</>}
-                                                </button>
-                                            )}
-                                        </div>
-                                        {!isCollapsed && (
-                                            <>
-                                                <div className="text-[13px] font-bold leading-snug text-[var(--text-main)] mb-2 whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
-                                                <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono tracking-tighter">
-                                                    <span className="opacity-80"><i className="fa-solid fa-microchip mr-1 text-[8px] opacity-50"></i>{t.budget.toLocaleString()}</span>
-                                                    <span className="opacity-80"><i className="fa-regular fa-calendar mr-1 text-[8px] opacity-50"></i>{t.deadline || '—'}</span>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                            {/* Active tasks */}
+                            <div className={`flex flex-col ${isCollapsed ? 'gap-1 px-1' : 'gap-0.5 px-2'}`}>
+                                {activeTasks.map(t => {
+                                    const sc = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.queued
+                                    const isSelected = activeTask?.id === t.id
+                                    const isWaiting = t.status === 'waiting_for_user'
+                                    const isRunning = t.status === 'running'
 
-                            {!isCollapsed && completedTasks.length > 0 && (
-                                <>
-                                    <div className="px-1 mt-6 mb-2 text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest flex items-center gap-2">
-                                        <div className="h-[1px] flex-grow bg-[var(--border)]"></div>
-                                        Completed
-                                        <div className="h-[1px] flex-grow bg-[var(--border)]"></div>
-                                    </div>
-                                    {completedTasks.map(t => (
+                                    return (
                                         <div
                                             key={t.id}
                                             onClick={() => { setActiveTask(t); setCurrentView('dashboard'); }}
-                                            className={`p-3 opacity-60 hover:opacity-100 cursor-pointer transition-all border-l-2 ${activeTask?.id === t.id ? 'bg-[var(--accent)] border-[var(--primary)]' : 'border-transparent hover:border-[var(--border)]'}`}
+                                            title={isCollapsed ? t.title : ''}
+                                            className="cursor-pointer transition-all duration-200 relative"
+                                            style={{
+                                                background: isSelected ? 'var(--accent-hover)' : isWaiting ? 'rgba(var(--warning-rgb), 0.04)' : 'transparent',
+                                                borderLeft: `2px solid ${isSelected ? 'var(--primary)' : isWaiting ? 'var(--warning)' : 'transparent'}`,
+                                                padding: isCollapsed ? '10px 0' : '10px 12px 10px 10px',
+                                                display: 'flex',
+                                                flexDirection: isCollapsed ? 'column' : 'column',
+                                                alignItems: isCollapsed ? 'center' : 'flex-start',
+                                                gap: isCollapsed ? '0' : '6px',
+                                            }}
+                                            onMouseEnter={e => {
+                                                if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--accent)';
+                                            }}
+                                            onMouseLeave={e => {
+                                                if (!isSelected) (e.currentTarget as HTMLElement).style.background = isWaiting ? 'rgba(var(--warning-rgb), 0.04)' : 'transparent';
+                                            }}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <div className="shrink-0 flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
-                                                    <i className={`fa-solid ${t.status === 'completed' ? 'fa-circle-check' : t.status === 'waiting_for_user' ? 'fa-circle-exclamation' : 'fa-circle-dot'} text-lg`}></i>
+                                            {/* Status row */}
+                                            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between w-full'}`}>
+                                                <div className="flex items-center gap-1.5">
+                                                    <i
+                                                        className={`fa-solid ${sc.icon} text-[10px] ${isRunning ? 'fa-spin' : ''}`}
+                                                        style={{ color: sc.color }}
+                                                    />
+                                                    {!isCollapsed && (
+                                                        <span
+                                                            className="text-[9px] font-black uppercase tracking-wider"
+                                                            style={{ color: sc.color }}
+                                                        >
+                                                            {sc.label}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <div className="text-sm font-semibold leading-snug text-[var(--text-main)] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</div>
+                                                {!isCollapsed && t.status === 'queued' && (
+                                                    <button
+                                                        onClick={e => handleTrigger(e, t.id)}
+                                                        className="text-[9px] font-black px-1.5 py-0.5 flex items-center gap-1 transition-all"
+                                                        style={{
+                                                            color: 'var(--primary)',
+                                                            border: '1px solid rgba(var(--primary-rgb), 0.3)',
+                                                        }}
+                                                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--accent)'}
+                                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                                    >
+                                                        {triggering === t.id
+                                                            ? <i className="fa-solid fa-spinner fa-spin text-[8px]"></i>
+                                                            : <><i className="fa-solid fa-play text-[7px]"></i> Run</>
+                                                        }
+                                                    </button>
+                                                )}
                                             </div>
+
+                                            {/* Task title */}
+                                            {!isCollapsed && (
+                                                <>
+                                                    <div
+                                                        className="text-[12px] font-semibold leading-snug overflow-hidden text-ellipsis whitespace-nowrap w-full"
+                                                        style={{ color: 'var(--text-main)' }}
+                                                    >
+                                                        {t.title}
+                                                    </div>
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span
+                                                            className="text-[9px] font-mono tabular-nums flex items-center gap-1"
+                                                            style={{ color: 'var(--text-muted)' }}
+                                                        >
+                                                            <i className="fa-solid fa-microchip text-[7px] opacity-50"></i>
+                                                            {t.budget.toLocaleString()}
+                                                        </span>
+                                                        <span
+                                                            className="text-[9px] font-mono tabular-nums flex items-center gap-1"
+                                                            style={{ color: 'var(--text-muted)' }}
+                                                        >
+                                                            <i className="fa-regular fa-calendar text-[7px] opacity-50"></i>
+                                                            {t.deadline || '—'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
-                                    ))}
-                                </>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Completed tasks */}
+                            {!isCollapsed && completedTasks.length > 0 && (
+                                <div className="mt-4 px-2">
+                                    <div className="flex items-center gap-2 px-2 mb-2">
+                                        <div className="flex-grow h-px" style={{ background: 'var(--border)' }} />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-subtle)' }}>Done</span>
+                                        <div className="flex-grow h-px" style={{ background: 'var(--border)' }} />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                        {completedTasks.map(t => (
+                                            <div
+                                                key={t.id}
+                                                onClick={() => { setActiveTask(t); setCurrentView('dashboard'); }}
+                                                className="cursor-pointer flex items-center gap-2.5 px-3 py-2 transition-all"
+                                                style={{
+                                                    opacity: activeTask?.id === t.id ? 1 : 0.55,
+                                                    background: activeTask?.id === t.id ? 'var(--accent)' : 'transparent',
+                                                    borderLeft: `2px solid ${activeTask?.id === t.id ? 'var(--success)' : 'transparent'}`,
+                                                }}
+                                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.background = 'var(--accent)'; }}
+                                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = activeTask?.id === t.id ? '1' : '0.55'; (e.currentTarget as HTMLElement).style.background = activeTask?.id === t.id ? 'var(--accent)' : 'transparent'; }}
+                                            >
+                                                <i className="fa-solid fa-circle-check text-[11px] shrink-0" style={{ color: 'var(--success)' }}></i>
+                                                <span className="text-[12px] font-medium overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: 'var(--text-main)' }}>
+                                                    {t.title}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </>
                     )}
                 </div>
 
-                {/* Theme & Footer Area */}
-                <div className={`p-6 border-t border-[var(--border)] flex flex-col gap-4 transition-all ${isCollapsed ? 'items-center px-0' : ''}`}>
-                    {!isCollapsed && <div className="text-[9px] uppercase font-black tracking-[0.3em] text-[var(--text-muted)] opacity-70 mb-1">Perspective</div>}
-                    <div className={`flex ${isCollapsed ? 'flex-col gap-3' : 'justify-between'} items-center`}>
-                        {themes.map(t => (
+                {/* ── Theme Switcher ── */}
+                <div
+                    className={`shrink-0 flex items-center gap-0 transition-all ${isCollapsed ? 'flex-col py-4 px-0 justify-center gap-3' : 'px-5 py-4'}`}
+                    style={{ borderTop: '1px solid var(--border)' }}
+                >
+                    {!isCollapsed && (
+                        <span className="text-[9px] font-black uppercase tracking-[0.25em] mr-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>Theme</span>
+                    )}
+                    <div className={`flex ${isCollapsed ? 'flex-col gap-2' : 'gap-2'}`}>
+                        {THEMES.map(t => (
                             <button
                                 key={t.key}
                                 onClick={() => handleThemeChange(t.key)}
-                                className={`w-8 h-8 flex items-center justify-center border transition-all ${theme === t.key
-                                    ? 'bg-[var(--primary)] text-black border-[var(--primary)]'
-                                    : 'bg-[var(--panel)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--primary)]/50'
-                                    }`}
                                 title={t.label}
-                            >
-                                <i className={`fa-solid ${t.icon} text-xs`}></i>
-                            </button>
+                                className="transition-all duration-200"
+                                style={{
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: '50%',
+                                    background: t.color,
+                                    border: theme === t.key
+                                        ? `2px solid var(--text-main)`
+                                        : '2px solid transparent',
+                                    boxShadow: theme === t.key
+                                        ? `0 0 8px ${t.color}80`
+                                        : 'none',
+                                    outline: theme === t.key ? `1px solid ${t.color}` : 'none',
+                                    outlineOffset: 2,
+                                    transform: theme === t.key ? 'scale(1.15)' : 'scale(1)',
+                                    opacity: theme === t.key ? 1 : 0.5,
+                                }}
+                            />
                         ))}
                     </div>
                 </div>
             </aside>
 
-            {/* DELEGATE TASK MODAL */}
+            {/* ─── DELEGATE TASK MODAL ─────────────────────────── */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setIsModalOpen(false)}>
-                    <div className="w-full max-w-[800px] bg-[var(--panel)] border border-[var(--border)] flex flex-col animate-[popIn_0.25s_ease] max-h-[90vh] overflow-y-auto hide-scrollbar">
-
-                        {/* Modal Header */}
-                        <div className="px-8 py-6 border-b border-[var(--border)] flex items-center justify-between">
+                <div
+                    className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                    style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}
+                    onClick={e => e.target === e.currentTarget && setIsModalOpen(false)}
+                >
+                    <div
+                        className="w-full max-w-[680px] flex flex-col max-h-[92vh] overflow-y-auto hide-scrollbar"
+                        style={{
+                            background: 'var(--panel)',
+                            border: '1px solid var(--border-hover)',
+                            animation: 'popIn 0.2s ease',
+                        }}
+                    >
+                        {/* Modal header */}
+                        <div
+                            className="px-7 py-5 flex items-start justify-between shrink-0"
+                            style={{ borderBottom: '1px solid var(--border)' }}
+                        >
                             <div>
-                                <h2 className="text-xl font-bold flex items-center gap-2.5 text-[var(--text-main)] m-0">
-                                    <i className="fa-solid fa-bolt text-[var(--primary)] text-base"></i>
-                                    Agentic Delegation
+                                <h2 className="text-[17px] font-black tracking-tight flex items-center gap-2.5 m-0" style={{ color: 'var(--text-main)' }}>
+                                    <span style={{ color: 'var(--primary)' }}><i className="fa-solid fa-bolt text-[14px]"></i></span>
+                                    Delegate Mission
                                 </h2>
-                                <p className="text-sm text-[var(--text-muted)] mt-1.5 m-0">OPAS will queue this task, equip skills, and execute autonomously.</p>
+                                <p className="text-[12px] mt-1 m-0" style={{ color: 'var(--text-muted)' }}>
+                                    OPAS will queue and execute this autonomously, requesting approval before any high-impact action.
+                                </p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors w-8 h-8 flex items-center justify-center">
-                                <i className="fa-solid fa-xmark text-lg"></i>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="w-7 h-7 flex items-center justify-center transition-colors mt-0.5"
+                                style={{ color: 'var(--text-muted)' }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-main)'}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
+                            >
+                                <i className="fa-solid fa-xmark text-[15px]"></i>
                             </button>
                         </div>
 
-                        {/* Modal Form */}
-                        <form className="flex flex-col gap-5 p-8" onSubmit={handleSubmit}>
+                        {/* Modal form */}
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-7">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Operation Title *</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
+                                    Mission Title <span style={{ color: 'var(--primary)' }}>*</span>
+                                </label>
                                 <input
                                     name="title"
                                     required
                                     type="text"
-                                    className="p-3 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[var(--primary)] transition-colors text-sm"
-                                    placeholder="e.g. Research Top AI Tools 2025"
+                                    placeholder="e.g. Research the top AI coding tools"
+                                    className="w-full px-4 py-3 text-[13px] outline-none transition-all font-medium"
+                                    style={{
+                                        background: 'var(--input-bg)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-main)',
+                                    }}
+                                    onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.5)'}
+                                    onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
                                 />
                             </div>
+
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Detailed Objective & Payload *</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
+                                    Objective & Context <span style={{ color: 'var(--primary)' }}>*</span>
+                                </label>
                                 <textarea
                                     name="description"
                                     required
                                     rows={5}
-                                    className="p-3 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[var(--primary)] transition-colors resize-none text-sm leading-relaxed"
                                     placeholder="Provide context, URLs, constraints, and clear success criteria..."
-                                ></textarea>
+                                    className="w-full px-4 py-3 text-[13px] outline-none transition-all resize-none leading-relaxed"
+                                    style={{
+                                        background: 'var(--input-bg)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-main)',
+                                    }}
+                                    onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.5)'}
+                                    onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
+                                />
                             </div>
-                            <div className="flex gap-4">
-                                <div className="flex flex-col gap-1.5 flex-1">
-                                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Deadline</label>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>Deadline</label>
                                     <input
                                         name="deadline"
                                         type="date"
-                                        className="p-3 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[var(--primary)] transition-colors font-mono text-sm"
+                                        className="w-full px-4 py-3 text-[13px] outline-none transition-all font-mono"
+                                        style={{
+                                            background: 'var(--input-bg)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-main)',
+                                        }}
+                                        onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.5)'}
+                                        onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
                                     />
                                 </div>
-                                <div className="flex flex-col gap-1.5 flex-1">
-                                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Token Budget</label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
+                                        Token Budget <span style={{ color: 'var(--primary)' }}>*</span>
+                                    </label>
                                     <input
                                         name="budget"
                                         required
                                         type="number"
                                         defaultValue={50000}
-                                        className="p-3 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none focus:border-[var(--primary)] transition-colors font-mono text-sm"
+                                        className="w-full px-4 py-3 text-[13px] outline-none transition-all font-mono"
+                                        style={{
+                                            background: 'var(--input-bg)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-main)',
+                                        }}
+                                        onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.5)'}
+                                        onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-1 border-t border-[var(--border)] mt-1">
+                            {/* Actions */}
+                            <div
+                                className="flex justify-end gap-3 pt-3 mt-1"
+                                style={{ borderTop: '1px solid var(--border)' }}
+                            >
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-5 py-2.5 bg-transparent border border-[var(--border)] text-[var(--text-muted)] text-sm font-semibold hover:bg-[var(--accent)] hover:text-[var(--text-main)] transition-colors"
+                                    className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all"
+                                    style={{
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-muted)',
+                                        background: 'transparent',
+                                    }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-main)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="px-6 py-2.5 bg-[var(--primary)] text-[var(--bg)] text-sm font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        background: 'var(--primary)',
+                                        color: 'var(--bg)',
+                                    }}
+                                    onMouseEnter={e => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                                 >
-                                    {submitting ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Queuing...</> : 'Launch Operation'}
+                                    {submitting
+                                        ? <><i className="fa-solid fa-spinner fa-spin text-[10px]"></i> Queuing...</>
+                                        : <><i className="fa-solid fa-rocket text-[10px]"></i> Launch</>
+                                    }
                                 </button>
                             </div>
                         </form>

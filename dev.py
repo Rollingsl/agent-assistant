@@ -70,7 +70,7 @@ def main():
 
     # Start backend process with logs piped directly to terminal
     backend_process = subprocess.Popen(
-        [python_path, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8000)"],
+        [python_path, "-c", "import uvicorn; uvicorn.run('src.backend.main:app', host='0.0.0.0', port=8009)"],
         cwd=os.getcwd(),
         env=env
     )
@@ -86,7 +86,7 @@ def main():
     # Pass NODE_OPTIONS=--no-deprecation to suppress the harmless util._extend warning
     
     frontend_process = subprocess.Popen(
-        "npm run dev -- -p 80",
+        "npm run dev -- -p 8008",
         cwd=frontend_dir,
         shell=True,
         env=env

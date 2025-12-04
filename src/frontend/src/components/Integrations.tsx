@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-// Matches CONFIG_SCHEMA on the backend
 interface ConfigEntry {
     key: string
     label: string
@@ -10,52 +9,49 @@ interface ConfigEntry {
     is_secret: boolean
     placeholder: string
     source: 'env' | 'override' | 'unset'
-    display: string   // masked or plain value safe for display
+    display: string
     is_set: boolean
 }
 
-// Group metadata: icon, brand color, description
-const GROUP_META: Record<string, { icon: string; color: string; desc: string }> = {
-    LLM: { icon: 'fa-solid fa-brain', color: '#10a37f', desc: 'Core language model used by the OPAS inference engine for all reasoning and generation.' },
-    Email: { icon: 'fa-brands fa-google', color: '#ea4335', desc: 'Allows OPAS to draft and dispatch emails on your behalf, subject to HITL approval.' },
-    Telegram: { icon: 'fa-brands fa-telegram', color: '#2AABEE', desc: 'Remote Telegram bot access. OPAS can send notifications and receive commands from any device.' },
-    Slack: { icon: 'fa-brands fa-slack', color: '#E01E5A', desc: 'Equip OPAS to read channels, summarize threads, and auto-reply to team queries.' },
-    Discord: { icon: 'fa-brands fa-discord', color: '#5865F2', desc: 'Deploy OPAS as a Discord sentinel to receive commands and moderate servers autonomously.' },
+const GROUP_META: Record<string, { icon: string; color: string; brand: string; desc: string }> = {
+    LLM:      { icon: 'fa-solid fa-brain',        color: '#10b981', brand: '#10b981', desc: 'Core inference engine powering all reasoning and task generation.' },
+    Email:    { icon: 'fa-brands fa-google',       color: '#ea4335', brand: '#ea4335', desc: 'Send and compose emails autonomously via Gmail, with HITL approval.' },
+    Telegram: { icon: 'fa-brands fa-telegram',     color: '#2AABEE', brand: '#2AABEE', desc: 'Receive commands and dispatch notifications via Telegram bot.' },
+    Slack:    { icon: 'fa-brands fa-slack',         color: '#E01E5A', brand: '#E01E5A', desc: 'Read channels, summarize threads, and auto-reply to team messages.' },
+    Discord:  { icon: 'fa-brands fa-discord',      color: '#5865F2', brand: '#5865F2', desc: 'Deploy OPAS as a Discord bot to moderate and respond to server messages.' },
 }
 
 const ALL_GROUPS = ['LLM', 'Email', 'Telegram', 'Slack', 'Discord']
 
-function SourceBadge({ source }: { source: string }) {
-    const styles = {
-        env: 'text-[#10a37f] border-[#10a37f]/40 bg-[#10a37f]/10',
-        override: 'text-[var(--primary)] border-[var(--primary)]/40 bg-[var(--accent)]',
-        unset: 'text-[#f39c12] border-[#f39c12]/40 bg-[#f39c12]/10',
-    }[source] ?? 'text-[var(--text-muted)] border-[var(--border)]'
-
-    const label = { env: '● .env file', override: '● UI override', unset: '○ Not set' }[source] ?? source
-
+function SourceTag({ source }: { source: 'env' | 'override' | 'unset' }) {
+    const cfg = {
+        env:      { label: '.env',     color: 'var(--success)',  bg: 'rgba(var(--success-rgb),0.08)',  border: 'rgba(var(--success-rgb),0.2)' },
+        override: { label: 'Override', color: 'var(--primary)',  bg: 'var(--accent)',                  border: 'rgba(var(--primary-rgb),0.25)' },
+        unset:    { label: 'Not set',  color: 'var(--warning)',  bg: 'rgba(var(--warning-rgb),0.06)',  border: 'rgba(var(--warning-rgb),0.2)' },
+    }[source]
     return (
-        <span className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${styles.replace(/bg-.*|border-.*/g, '')}`}>
-            <span className="text-[6px]">●</span> {label.replace('● ', '')}
+        <span
+            className="text-[8px] font-black uppercase tracking-[0.18em] px-1.5 py-0.5"
+            style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}
+        >
+            {cfg.label}
         </span>
     )
 }
 
 export default function Integrations() {
-    const [config, setConfig] = useState<ConfigEntry[]>([])
+    const [config, setConfig]       = useState<ConfigEntry[]>([])
     const [overrides, setOverrides] = useState<Record<string, string>>({})
-    const [saving, setSaving] = useState(false)
-    const [saved, setSaved] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({})
+    const [saving, setSaving]       = useState(false)
+    const [saved, setSaved]         = useState(false)
+    const [loading, setLoading]     = useState(true)
+    const [activeGroup, setActiveGroup] = useState<string>('LLM')
 
-    // Load config from backend on mount
     useEffect(() => {
         fetch('/api/config')
             .then(r => r.json())
-            .then(d => {
-                setConfig(d.config || [])
-                setLoading(false)
-            })
+            .then(d => { setConfig(d.config || []); setLoading(false) })
             .catch(() => setLoading(false))
     }, [])
 
@@ -63,147 +59,285 @@ export default function Integrations() {
         setOverrides(prev => ({ ...prev, [key]: value }))
     }
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const toggleVisible = (key: string) => {
+        setVisibleKeys(prev => ({ ...prev, [key]: !prev[key] }))
+    }
+
+    const handleSave = async (e?: React.FormEvent) => {
+        e?.preventDefault()
         setSaving(true)
         try {
-            // Only send keys that were actually typed (non-empty)
             const payload = Object.fromEntries(
-                Object.entries(overrides).filter(([_, v]) => v.trim() !== '')
+                Object.entries(overrides).filter(([, v]) => v.trim() !== '')
             )
             if (Object.keys(payload).length > 0) {
                 await fetch('/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ values: payload })
+                    body: JSON.stringify({ values: payload }),
                 })
-                // Refresh config to get updated sources/display values
                 const refreshed = await fetch('/api/config').then(r => r.json())
                 setConfig(refreshed.config || [])
-                setOverrides({})  // Clear local overrides after save
+                setOverrides({})
             }
             setSaved(true)
             setTimeout(() => setSaved(false), 2500)
-        } catch (e) { } finally {
+        } catch { /* silent */ } finally {
             setSaving(false)
         }
     }
 
-    // Group entries by group name
     const byGroup = config.reduce<Record<string, ConfigEntry[]>>((acc, entry) => {
         acc[entry.group] = [...(acc[entry.group] || []), entry]
         return acc
     }, {})
 
-    return (
-        <div className="flex flex-col flex-1 p-10 animate-[fadeIn_0.5s_ease] overflow-y-auto hide-scrollbar">
+    const pendingCount = Object.values(overrides).filter(v => v.trim()).length
+    const activeEntries = byGroup[activeGroup] || []
+    const activeMeta = GROUP_META[activeGroup]
+    const allSet = activeEntries.length > 0 && activeEntries.every(e => e.is_set)
+    const missing = activeEntries.filter(e => !e.is_set).length
 
-            {/* Page Header */}
-            <div className="flex justify-between items-end mb-10 pb-6 border-b border-[var(--border)] shrink-0 transition-colors duration-500">
+    return (
+        <div
+            className="flex flex-col h-full overflow-hidden"
+            style={{ animation: 'fadeIn 0.4s ease' }}
+        >
+            {/* ── Page Header ── */}
+            <div
+                className="shrink-0 flex items-center justify-between px-8 py-5 gap-4"
+                style={{ borderBottom: '1px solid var(--border)', background: 'var(--panel)' }}
+            >
                 <div>
-                    <h2 className="text-4xl font-bold m-0 flex items-center gap-4 tracking-wide text-[var(--text-main)]">
-                        <i className="fa-solid fa-server text-[var(--primary)]"></i>
-                        Integrations & APIs
+                    <h2
+                        className="text-[18px] font-black tracking-tight flex items-center gap-3 m-0"
+                        style={{ color: 'var(--text-main)' }}
+                    >
+                        <i className="fa-solid fa-plug text-[15px]" style={{ color: 'var(--primary)' }}></i>
+                        Integrations
                     </h2>
-                    <p className="text-[var(--text-muted)] mt-3 text-base max-w-3xl">
-                        All credentials are read from your <code className="font-mono text-[var(--primary)] text-xs bg-[var(--accent)] px-1.5 py-0.5">.env</code> file at startup.
-                        Values set here override the environment for the current session without modifying the file.
-                        Secrets are never sent back to the browser.
+                    <p className="text-[12px] mt-1 m-0 max-w-xl" style={{ color: 'var(--text-muted)' }}>
+                        Credentials are loaded from your <code className="font-mono px-1 py-0.5 text-[11px]" style={{ color: 'var(--primary)', background: 'var(--accent)', border: '1px solid rgba(var(--primary-rgb),0.2)' }}>.env</code> file.
+                        UI overrides apply to the current session only — secrets are never sent back to the browser.
                     </p>
                 </div>
+
                 <button
-                    onClick={handleSave}
-                    disabled={saving || Object.keys(overrides).filter(k => overrides[k].trim()).length === 0}
-                    className={`px-8 py-3.5 font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${saved ? 'bg-[#10a37f] text-black' : 'bg-[var(--primary)] text-black hover:opacity-90'}`}
+                    onClick={() => handleSave()}
+                    disabled={saving || pendingCount === 0}
+                    className="flex items-center gap-2 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{
+                        background: saved ? 'var(--success)' : 'var(--primary)',
+                        color: 'var(--bg)',
+                    }}
+                    onMouseEnter={e => { if (pendingCount > 0 && !saving) (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >
-                    {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Applying...</> :
-                        saved ? <><i className="fa-solid fa-check"></i> Applied!</> :
-                            <><i className="fa-solid fa-upload"></i> Apply Overrides</>}
+                    {saving
+                        ? <><i className="fa-solid fa-spinner fa-spin text-[10px]"></i> Applying...</>
+                        : saved
+                            ? <><i className="fa-solid fa-check text-[10px]"></i> Applied!</>
+                            : <><i className="fa-solid fa-upload text-[10px]"></i> Apply{pendingCount > 0 ? ` (${pendingCount})` : ''}</>
+                    }
                 </button>
             </div>
 
-            {loading && (
-                <div className="flex items-center justify-center gap-3 text-[var(--text-muted)] mt-16">
-                    <i className="fa-solid fa-spinner fa-spin text-[var(--primary)] text-xl"></i>
-                    Loading configuration...
+            {loading ? (
+                <div className="flex-grow flex items-center justify-center gap-3" style={{ color: 'var(--text-muted)' }}>
+                    <i className="fa-solid fa-spinner fa-spin text-xl" style={{ color: 'var(--primary)' }}></i>
+                    <span className="text-[13px]">Loading configuration...</span>
                 </div>
-            )}
+            ) : (
+                <div className="flex-grow overflow-hidden flex">
 
-            <form onSubmit={handleSave} className="flex flex-col gap-8 pb-10">
+                    {/* ── Group Tab Rail ── */}
+                    <div
+                        className="shrink-0 w-[200px] flex flex-col py-4 gap-1 overflow-y-auto hide-scrollbar"
+                        style={{ borderRight: '1px solid var(--border)', background: 'var(--panel)' }}
+                    >
+                        <div className="px-4 pb-2 text-[8px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                            Services
+                        </div>
+                        {ALL_GROUPS.map(g => {
+                            const meta = GROUP_META[g]
+                            const entries = byGroup[g] || []
+                            const groupSet = entries.length > 0 && entries.every(e => e.is_set)
+                            const groupMissing = entries.filter(e => !e.is_set).length
+                            const isActive = activeGroup === g
 
-                {ALL_GROUPS.map(groupName => {
-                    const meta = GROUP_META[groupName]
-                    const entries = byGroup[groupName] || []
-                    return (
-                        <div key={groupName} className="border border-[var(--border)] border-l-4 transition-colors duration-500" style={{ borderLeftColor: meta.color }}>
-                            <div className="px-8 py-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--panel)]">
+                            return (
+                                <button
+                                    key={g}
+                                    onClick={() => setActiveGroup(g)}
+                                    className="flex items-center gap-3 px-4 py-3 text-left transition-all relative"
+                                    style={{
+                                        background: isActive ? 'var(--accent-hover)' : 'transparent',
+                                        borderLeft: `2px solid ${isActive ? meta.color : 'transparent'}`,
+                                        color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
+                                    }}
+                                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--accent)'; }}
+                                    onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                                >
+                                    <i
+                                        className={`${meta.icon} text-[13px] shrink-0`}
+                                        style={{ color: isActive ? meta.color : 'var(--text-muted)', opacity: isActive ? 1 : 0.6 }}
+                                    />
+                                    <div className="flex flex-col leading-none gap-0.5">
+                                        <span className="text-[12px] font-bold">{g}</span>
+                                        {groupSet ? (
+                                            <span className="text-[9px]" style={{ color: 'var(--success)', opacity: 0.8 }}>Configured</span>
+                                        ) : groupMissing > 0 ? (
+                                            <span className="text-[9px]" style={{ color: 'var(--warning)', opacity: 0.8 }}>{groupMissing} missing</span>
+                                        ) : (
+                                            <span className="text-[9px]" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>Not configured</span>
+                                        )}
+                                    </div>
+                                    {/* Dot indicator */}
+                                    <div
+                                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
+                                        style={{
+                                            background: groupSet ? 'var(--success)' : groupMissing > 0 ? 'var(--warning)' : 'var(--text-subtle)',
+                                            opacity: 0.8,
+                                        }}
+                                    />
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {/* ── Group Detail Panel ── */}
+                    <div className="flex-grow overflow-y-auto hide-scrollbar">
+                        <form onSubmit={handleSave} className="flex flex-col">
+                            {/* Group header */}
+                            <div
+                                className="px-8 py-6 flex items-center justify-between"
+                                style={{
+                                    borderBottom: '1px solid var(--border)',
+                                    borderLeft: `3px solid ${activeMeta?.color}`,
+                                }}
+                            >
                                 <div className="flex items-center gap-4">
-                                    <i className={`${meta.icon} text-2xl`} style={{ color: meta.color }}></i>
+                                    <div
+                                        className="w-10 h-10 flex items-center justify-center text-xl shrink-0"
+                                        style={{
+                                            background: `${activeMeta?.color}15`,
+                                            border: `1px solid ${activeMeta?.color}30`,
+                                            color: activeMeta?.color,
+                                        }}
+                                    >
+                                        <i className={activeMeta?.icon}></i>
+                                    </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-[var(--text-main)] m-0">{groupName}</h3>
-                                        <p className="text-[var(--text-muted)] text-sm m-0 mt-0.5">{meta.desc}</p>
+                                        <h3 className="text-[16px] font-black m-0" style={{ color: 'var(--text-main)' }}>{activeGroup}</h3>
+                                        <p className="text-[12px] m-0 mt-0.5 max-w-lg" style={{ color: 'var(--text-muted)' }}>{activeMeta?.desc}</p>
                                     </div>
                                 </div>
-                                {/* Group status summary */}
-                                <div className="flex items-center gap-3">
-                                    {entries.filter(e => e.is_set).length === entries.length && entries.length > 0 && (
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#10a37f] flex items-center gap-1.5">
-                                            <i className="fa-solid fa-circle-check"></i> Configured
+
+                                <div className="shrink-0">
+                                    {allSet ? (
+                                        <span
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em]"
+                                            style={{ color: 'var(--success)', background: 'rgba(var(--success-rgb),0.08)', border: '1px solid rgba(var(--success-rgb),0.2)' }}
+                                        >
+                                            <i className="fa-solid fa-circle-check"></i> Fully Configured
                                         </span>
-                                    )}
-                                    {entries.some(e => !e.is_set) && (
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f39c12] flex items-center gap-1.5">
-                                            <i className="fa-solid fa-triangle-exclamation"></i>
-                                            {entries.filter(e => !e.is_set).length} missing
+                                    ) : missing > 0 ? (
+                                        <span
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em]"
+                                            style={{ color: 'var(--warning)', background: 'rgba(var(--warning-rgb),0.06)', border: '1px solid rgba(var(--warning-rgb),0.2)' }}
+                                        >
+                                            <i className="fa-solid fa-triangle-exclamation"></i> {missing} Key{missing !== 1 ? 's' : ''} Missing
                                         </span>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
 
-                            <div className="p-8 grid grid-cols-1 xl:grid-cols-2 gap-6 bg-[var(--bg)]">
-                                {entries.map(entry => {
-                                    const hasOverride = overrides[entry.key]?.trim()
-                                    return (
-                                        <div key={entry.key} className="flex flex-col gap-2">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-[11px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
-                                                    {entry.label}
-                                                </label>
-                                                <SourceBadge source={hasOverride ? 'override' : entry.source} />
-                                            </div>
-                                            <div className="relative">
-                                                <input
-                                                    type={entry.is_secret ? 'password' : 'text'}
-                                                    value={overrides[entry.key] ?? ''}
-                                                    onChange={e => handleChange(entry.key, e.target.value)}
-                                                    className="w-full p-4 bg-[var(--input-bg)] border border-[var(--border)] text-[var(--text-main)] outline-none font-mono text-sm transition-all focus:border-[var(--primary)] placeholder:text-[var(--text-muted)]/50"
-                                                    placeholder={
-                                                        entry.is_set
-                                                            ? entry.display
-                                                            : entry.placeholder
-                                                    }
-                                                    autoComplete="off"
-                                                />
-                                                {entry.is_set && !overrides[entry.key] && (
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-muted)] font-mono pointer-events-none">
-                                                        {entry.display}
-                                                    </div>
+                            {/* Fields */}
+                            <div className="p-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                {activeEntries.length === 0 ? (
+                                    <div
+                                        className="col-span-2 py-12 flex flex-col items-center justify-center gap-3"
+                                        style={{ color: 'var(--text-muted)', opacity: 0.5 }}
+                                    >
+                                        <i className="fa-solid fa-sliders text-3xl"></i>
+                                        <p className="text-[13px]">No settings for this group.</p>
+                                    </div>
+                                ) : (
+                                    activeEntries.map(entry => {
+                                        const hasOverride = !!overrides[entry.key]?.trim()
+                                        const effectiveSource = hasOverride ? 'override' : entry.source
+                                        const showAsText = entry.is_secret ? !!visibleKeys[entry.key] : true
+
+                                        return (
+                                            <div key={entry.key} className="flex flex-col gap-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label
+                                                        className="text-[10px] font-black uppercase tracking-[0.18em]"
+                                                        style={{ color: 'var(--text-muted)' }}
+                                                    >
+                                                        {entry.label}
+                                                        {entry.is_secret && (
+                                                            <i className="fa-solid fa-lock text-[8px] ml-1.5 opacity-50"></i>
+                                                        )}
+                                                    </label>
+                                                    <SourceTag source={effectiveSource} />
+                                                </div>
+
+                                                <div className="relative">
+                                                    <input
+                                                        type={showAsText ? 'text' : 'password'}
+                                                        value={overrides[entry.key] ?? ''}
+                                                        onChange={e => handleChange(entry.key, e.target.value)}
+                                                        placeholder={entry.is_set ? entry.display : entry.placeholder}
+                                                        autoComplete="off"
+                                                        className="w-full px-4 py-3 text-[13px] font-mono outline-none transition-all"
+                                                        style={{
+                                                            background: 'var(--input-bg)',
+                                                            border: `1px solid ${hasOverride ? 'rgba(var(--primary-rgb),0.4)' : 'var(--border)'}`,
+                                                            color: 'var(--text-main)',
+                                                            paddingRight: entry.is_secret ? '44px' : '16px',
+                                                        }}
+                                                        onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.45)'}
+                                                        onBlur={e => (e.target as HTMLElement).style.borderColor = hasOverride ? 'rgba(var(--primary-rgb),0.4)' : 'var(--border)'}
+                                                    />
+
+                                                    {/* Secret toggle */}
+                                                    {entry.is_secret && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleVisible(entry.key)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors"
+                                                            style={{ color: 'var(--text-muted)' }}
+                                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-main)'}
+                                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
+                                                            title={visibleKeys[entry.key] ? 'Hide' : 'Reveal'}
+                                                        >
+                                                            <i className={`fa-solid ${visibleKeys[entry.key] ? 'fa-eye-slash' : 'fa-eye'} text-[11px]`}></i>
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Hint text */}
+                                                {entry.is_set && !hasOverride && (
+                                                    <p className="text-[10px] m-0" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                                                        Set via <strong>{entry.source === 'env' ? '.env file' : 'UI override'}</strong>. Type a new value to override for this session.
+                                                    </p>
+                                                )}
+                                                {hasOverride && (
+                                                    <p className="text-[10px] m-0 flex items-center gap-1" style={{ color: 'var(--primary)', opacity: 0.8 }}>
+                                                        <i className="fa-solid fa-circle-dot text-[8px]"></i>
+                                                        Pending — click Apply to activate.
+                                                    </p>
                                                 )}
                                             </div>
-                                            {entry.is_set && !overrides[entry.key] && (
-                                                <p className="text-[11px] text-[var(--text-muted)] pl-1">
-                                                    Set via <strong>{entry.source === 'env' ? '.env file' : 'UI override'}</strong>. Type a new value to override.
-                                                </p>
-                                            )}
-                                        </div>
-                                    )
-                                })}
+                                        )
+                                    })
+                                )}
                             </div>
-                        </div>
-                    )
-                })}
-
-            </form>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
