@@ -16,6 +16,7 @@ interface Message {
 interface Task {
     id: number
     title: string
+    description: string
     status: string
     deadline: string
     budget: number
@@ -23,7 +24,7 @@ interface Task {
 
 interface DashboardProps {
     activeTask: Task | null
-    setActiveTask: (task: Task) => void
+    setActiveTask: (task: Task | null) => void
 }
 
 const STATUS_CONFIG: Record<string, { icon: string; color: string; label: string; bg: string }> = {
@@ -231,14 +232,14 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {recentTasks.map((t, i) => {
                                 const sc = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.queued
                                 return (
                                     <div
                                         key={t.id}
                                         onClick={() => setActiveTask(t)}
-                                        className="cursor-pointer group flex flex-col gap-3 p-5 transition-all duration-200"
+                                        className="cursor-pointer group flex flex-col p-5 transition-all duration-200"
                                         style={{
                                             background: 'var(--panel)',
                                             border: '1px solid var(--border)',
@@ -253,8 +254,8 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
                                             (e.currentTarget as HTMLElement).style.background = 'var(--panel)';
                                         }}
                                     >
-                                        {/* Top row */}
-                                        <div className="flex items-center justify-between">
+                                        {/* Top row: ID + status */}
+                                        <div className="flex items-center justify-between mb-3">
                                             <span
                                                 className="text-[9px] font-black font-mono tracking-[0.12em]"
                                                 style={{ color: 'var(--text-muted)', opacity: 0.7 }}
@@ -276,21 +277,40 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
 
                                         {/* Title */}
                                         <h4
-                                            className="text-[13px] font-semibold leading-snug transition-colors"
+                                            className="text-[14px] font-bold leading-snug transition-colors mb-2"
                                             style={{ color: 'var(--text-main)' }}
                                         >
                                             {t.title}
                                         </h4>
 
-                                        {/* Metadata */}
-                                        <div className="flex items-center justify-between mt-auto">
-                                            <span className="text-[10px] font-mono tabular-nums flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                                        {/* Description preview */}
+                                        {t.description && (
+                                            <p
+                                                className="text-[12px] leading-relaxed mb-4"
+                                                style={{
+                                                    color: 'var(--text-muted)',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                {t.description}
+                                            </p>
+                                        )}
+
+                                        {/* Metadata footer */}
+                                        <div
+                                            className="flex items-center justify-between mt-auto pt-3"
+                                            style={{ borderTop: '1px solid var(--border)' }}
+                                        >
+                                            <span className="text-[10px] font-mono tabular-nums flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                                                 <i className="fa-solid fa-microchip text-[8px] opacity-40"></i>
-                                                {t.budget.toLocaleString()}
+                                                {t.budget.toLocaleString()} tokens
                                             </span>
-                                            <span className="text-[10px] font-mono flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                                            <span className="text-[10px] font-mono flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                                                 <i className="fa-regular fa-calendar text-[8px] opacity-40"></i>
-                                                {t.deadline || '—'}
+                                                {t.deadline || 'No deadline'}
                                             </span>
                                         </div>
                                     </div>
@@ -358,57 +378,72 @@ function TaskView({ activeTask }: { activeTask: Task }) {
         >
             {/* ── Task header ── */}
             <div
-                className="shrink-0 flex items-center justify-between px-7 py-4 gap-4"
-                style={{
-                    background: 'var(--panel)',
-                    borderBottom: '1px solid var(--border)',
-                }}
+                className="shrink-0 flex flex-col"
+                style={{ background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}
             >
-                <div className="flex items-center gap-3 min-w-0">
-                    <div style={{ color: 'var(--primary)', opacity: 0.7 }}>
-                        <Logo size={18} />
+                {/* Top bar: logo, title, status, metadata */}
+                <div className="flex items-center justify-between px-7 py-3.5 gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div style={{ color: 'var(--primary)', opacity: 0.7 }}>
+                            <Logo size={18} />
+                        </div>
+                        <div className="w-px h-5 shrink-0" style={{ background: 'var(--border)' }} />
+                        <h2
+                            className="text-[14px] font-bold tracking-tight truncate"
+                            style={{ color: 'var(--text-main)' }}
+                        >
+                            {activeTask.title}
+                        </h2>
                     </div>
-                    <div
-                        className="w-px h-5 shrink-0"
-                        style={{ background: 'var(--border)' }}
-                    />
-                    <h2
-                        className="text-[14px] font-bold tracking-tight truncate"
-                        style={{ color: 'var(--text-main)' }}
-                    >
-                        {activeTask.title}
-                    </h2>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                        <span
+                            className="flex items-center gap-1.5 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]"
+                            style={{ color: sc.color, background: sc.bg, border: `1px solid ${sc.color}35` }}
+                        >
+                            <i className={`fa-solid ${sc.icon} text-[9px] ${isRunning ? 'fa-spin' : ''}`}></i>
+                            {sc.label}
+                        </span>
+                        <span className="text-[9px] font-black font-mono tracking-[0.18em]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                            OP-{String(activeTask.id).padStart(3, '0')}
+                        </span>
+                        <span className="hidden md:flex items-center gap-1 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                            <i className="fa-solid fa-microchip text-[8px] opacity-40"></i>
+                            {activeTask.budget.toLocaleString()}
+                        </span>
+                        {activeTask.deadline && (
+                            <span className="hidden md:flex items-center gap-1 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                                <i className="fa-regular fa-calendar text-[8px] opacity-40"></i>
+                                {activeTask.deadline}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0">
-                    {/* Status badge */}
-                    <span
-                        className="flex items-center gap-1.5 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]"
-                        style={{
-                            color: sc.color,
-                            background: sc.bg,
-                            border: `1px solid ${sc.color}35`,
-                        }}
+                {/* Description strip */}
+                {activeTask.description && (
+                    <div
+                        className="px-7 pb-3.5 flex items-start gap-2"
+                        style={{ marginTop: '-2px' }}
                     >
-                        <i className={`fa-solid ${sc.icon} text-[9px] ${isRunning ? 'fa-spin' : ''}`}></i>
-                        {sc.label}
-                    </span>
-                    {/* Op ID */}
-                    <span
-                        className="text-[9px] font-black font-mono tracking-[0.18em]"
-                        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-                    >
-                        OP-{String(activeTask.id).padStart(3, '0')}
-                    </span>
-                    {/* Budget */}
-                    <span
-                        className="hidden md:flex items-center gap-1 text-[10px] font-mono"
-                        style={{ color: 'var(--text-muted)' }}
-                    >
-                        <i className="fa-solid fa-microchip text-[8px] opacity-40"></i>
-                        {activeTask.budget.toLocaleString()}
-                    </span>
-                </div>
+                        <i
+                            className="fa-solid fa-quote-left text-[9px] mt-0.5 shrink-0"
+                            style={{ color: 'var(--primary)', opacity: 0.35 }}
+                        ></i>
+                        <p
+                            className="text-[12px] leading-relaxed m-0"
+                            style={{
+                                color: 'var(--text-muted)',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {activeTask.description}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* ── Message area ── */}
@@ -500,7 +535,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                                             </div>
 
                                             {/* HITL Approval Card */}
-                                            {m.is_approval_request && (
+                                            {!!m.is_approval_request && (
                                                 <div
                                                     className="mt-5 p-5 flex flex-col gap-4 relative overflow-hidden"
                                                     style={{

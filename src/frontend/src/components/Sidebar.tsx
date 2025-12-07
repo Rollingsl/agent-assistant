@@ -6,6 +6,7 @@ import Logo from './Logo';
 interface Task {
     id: number;
     title: string;
+    description: string;
     status: string;
     deadline: string;
     budget: number;
@@ -15,7 +16,7 @@ interface SidebarProps {
     currentView: 'dashboard' | 'integrations' | 'knowledge';
     setCurrentView: (view: 'dashboard' | 'integrations' | 'knowledge') => void;
     activeTask: Task | null;
-    setActiveTask: (task: Task) => void;
+    setActiveTask: (task: Task | null) => void;
 }
 
 const STATUS_CONFIG: Record<string, { icon: string; color: string; rgb: string; label: string }> = {
@@ -153,7 +154,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                         return (
                             <button
                                 key={item.key}
-                                onClick={() => setCurrentView(item.key)}
+                                onClick={() => { setCurrentView(item.key); if (item.key === 'dashboard') setActiveTask(null); }}
                                 title={isCollapsed ? item.label : ''}
                                 className={`w-full flex items-center gap-3 transition-all duration-200 mb-0.5 relative group ${isCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-2.5'}`}
                                 style={{
@@ -301,7 +302,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                                 )}
                                             </div>
 
-                                            {/* Task title */}
+                                            {/* Task title + description */}
                                             {!isCollapsed && (
                                                 <>
                                                     <div
@@ -310,6 +311,21 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                                     >
                                                         {t.title}
                                                     </div>
+                                                    {t.description && (
+                                                        <div
+                                                            className="text-[10px] leading-snug w-full"
+                                                            style={{
+                                                                color: 'var(--text-muted)',
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden',
+                                                                opacity: 0.75,
+                                                            }}
+                                                        >
+                                                            {t.description}
+                                                        </div>
+                                                    )}
                                                     <div className="flex items-center justify-between w-full">
                                                         <span
                                                             className="text-[9px] font-mono tabular-nums flex items-center gap-1"
