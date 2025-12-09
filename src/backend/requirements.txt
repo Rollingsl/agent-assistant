@@ -13,5 +13,10 @@ python-telegram-bot==20.8
 # Call Handling Placeholder (Twilio)
 twilio==9.0.2
 
+# Agent Tools
+duckduckgo-search>=7.0.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
 # Utilities
 python-dotenv==1.0.1

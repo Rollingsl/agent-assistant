@@ -3,6 +3,7 @@ import threading
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import uvicorn
 from pydantic import BaseModel
 from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status
@@ -54,6 +55,7 @@ class TaskRequest(BaseModel):
     description: str
     deadline: str
     budget: int
+    category: str = "custom"
 
 class MessageRequest(BaseModel):
     content: str
@@ -73,6 +75,7 @@ class ConfigUpdateRequest(BaseModel):
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
 KNOWLEDGE_DIR = os.path.join(DATA_DIR, "knowledge")
 KNOWLEDGE_PATH = os.path.join(KNOWLEDGE_DIR, "knowledge.md")
+OUTPUTS_DIR = os.path.join(DATA_DIR, "outputs")
 
 DEFAULT_KNOWLEDGE = """# OPAS Neural Knowledge Base
 
@@ -94,7 +97,7 @@ def _mask(value: str) -> str:
     if not value:
         return ""
     visible = value[:4] if len(value) >= 4 else value[:1]
-    return visible + ("•" * min(12, len(value) - len(visible)))
+    return visible + ("*" * min(12, len(value) - len(visible)))
 
 
 # ---------------------------------------------------------------------------
@@ -105,11 +108,12 @@ def on_startup():
     # 1. Ensure Data & Knowledge directories exist
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(KNOWLEDGE_DIR, exist_ok=True)
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
     if not os.path.exists(KNOWLEDGE_PATH):
         with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
             f.write(DEFAULT_KNOWLEDGE)
-    
-    # 2. Initialize SQLite Database
+
+    # 2. Initialize SQLite Database (includes migrations)
     init_db()
 
     # 3. Start Background Worker Thread
@@ -127,7 +131,7 @@ async def fetch_tasks():
 
 @app.post("/api/tasks")
 async def create_new_task(req: TaskRequest):
-    task_id = add_task(req.title, req.description, req.deadline, req.budget)
+    task_id = add_task(req.title, req.description, req.deadline, req.budget, req.category)
     return {"message": "Success", "task_id": task_id}
 
 @app.get("/api/tasks/{task_id}/messages")
@@ -137,11 +141,11 @@ async def fetch_task_messages(task_id: int):
 @app.post("/api/tasks/{task_id}/messages")
 async def post_task_message(task_id: int, req: MessageRequest):
     if req.is_approval:
-        add_message(task_id, "user", "ACTION: APPROVED")
-        add_message(task_id, "agent", "Receipt acknowledged. Resuming background operations.")
+        add_message(task_id, "user", "ACTION: APPROVED", msg_type="user")
+        add_message(task_id, "agent", "Receipt acknowledged. Resuming background operations.", msg_type="agent")
         update_task_status(task_id, "approved")
     else:
-        add_message(task_id, "user", req.content)
+        add_message(task_id, "user", req.content, msg_type="user")
     return {"success": True}
 
 @app.post("/api/tasks/{task_id}/trigger")
@@ -154,8 +158,37 @@ async def trigger_task(task_id: int):
     if task['status'] != 'queued':
         return {"success": False, "message": f"Task is already '{task['status']}', not queued."}
     update_task_status(task_id, 'queued')  # keep as queued — worker loop picks it up immediately
-    add_message(task_id, "agent", "⚡ Manual trigger received. Elevating task priority — execution will begin on the next worker cycle.")
+    add_message(task_id, "agent", "Manual trigger received. Elevating task priority.", msg_type="agent")
     return {"success": True, "message": "Task prioritised for immediate execution."}
+
+
+# ---------------------------------------------------------------------------
+# Output Files Endpoints
+# ---------------------------------------------------------------------------
+@app.get("/api/outputs")
+async def list_outputs():
+    """List all files in the data/outputs/ directory."""
+    if not os.path.isdir(OUTPUTS_DIR):
+        return {"files": []}
+    files = []
+    for f in sorted(os.listdir(OUTPUTS_DIR)):
+        filepath = os.path.join(OUTPUTS_DIR, f)
+        if os.path.isfile(filepath):
+            files.append({
+                "filename": f,
+                "size": os.path.getsize(filepath),
+                "modified": os.path.getmtime(filepath),
+            })
+    return {"files": files}
+
+@app.get("/api/outputs/{filename}")
+async def get_output_file(filename: str):
+    """Download/serve a generated output file."""
+    safe_name = os.path.basename(filename)
+    filepath = os.path.join(OUTPUTS_DIR, safe_name)
+    if not os.path.isfile(filepath):
+        return {"error": "File not found"}
+    return FileResponse(filepath, filename=safe_name)
 
 
 # ---------------------------------------------------------------------------
@@ -179,10 +212,10 @@ async def update_knowledge(req: KnowledgeUpdateRequest):
 # General Config Endpoints
 # ---------------------------------------------------------------------------
 PLACEHOLDER_SENTINELS = {
-    "your_openai_api_key_here", 
-    "changeme", 
-    "", 
-    "you@gmail.com", 
+    "your_openai_api_key_here",
+    "changeme",
+    "",
+    "you@gmail.com",
     "xxxx xxxx xxxx xxxx",
     "123456:ABC-DEF_your_token_here",
     "your_telegram_bot_token_here",

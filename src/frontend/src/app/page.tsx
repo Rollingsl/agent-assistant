@@ -6,21 +6,25 @@ import Knowledge from '@/components/Knowledge';
 import Sidebar from '@/components/Sidebar';
 import { useState } from 'react';
 
-interface Task {
+export interface Task {
     id: number;
     title: string;
     description: string;
     status: string;
     deadline: string;
     budget: number;
+    category: string;
+    tokens_used: number;
 }
 
+export type View = 'dashboard' | 'integrations' | 'knowledge';
+
 export default function SPA() {
-    const [currentView, setCurrentView] = useState<'dashboard' | 'integrations' | 'knowledge'>('dashboard');
+    const [currentView, setCurrentView] = useState<View>('dashboard');
     const [activeTask, setActiveTask] = useState<Task | null>(null);
 
     return (
-        <div className="w-full h-full flex box-border font-sans overflow-hidden">
+        <div className="w-full h-full flex overflow-hidden" style={{ background: 'var(--bg)' }}>
             <Sidebar
                 currentView={currentView}
                 setCurrentView={setCurrentView}
@@ -28,7 +32,7 @@ export default function SPA() {
                 setActiveTask={setActiveTask}
             />
 
-            <main className="flex-grow flex flex-col relative overflow-hidden bg-[var(--bg)] transition-colors duration-500">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden transition-colors duration-400">
                 {currentView === 'dashboard' && <Dashboard activeTask={activeTask} setActiveTask={setActiveTask} />}
                 {currentView === 'integrations' && <Integrations />}
                 {currentView === 'knowledge' && <Knowledge />}

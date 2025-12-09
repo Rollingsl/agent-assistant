@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 
 export default function Knowledge() {
-    const [content, setContent]     = useState('')
-    const [isSaving, setIsSaving]   = useState(false)
-    const [savedOk, setSavedOk]     = useState(false)
-    const [loading, setLoading]     = useState(true)
-    const textareaRef               = useRef<HTMLTextAreaElement>(null)
+    const [content, setContent] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
+    const [savedOk, setSavedOk] = useState(false)
+    const [loading, setLoading] = useState(true)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     useEffect(() => {
         fetch('/api/knowledge')
@@ -28,9 +28,7 @@ export default function Knowledge() {
             })
             setSavedOk(true)
             setTimeout(() => setSavedOk(false), 2500)
-        } catch { /* silent */ } finally {
-            setIsSaving(false)
-        }
+        } catch { /* silent */ } finally { setIsSaving(false) }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -38,129 +36,103 @@ export default function Knowledge() {
             e.preventDefault()
             handleSave()
         }
-        // Tab indentation
         if (e.key === 'Tab') {
             e.preventDefault()
             const ta = textareaRef.current
             if (!ta) return
             const start = ta.selectionStart
-            const end   = ta.selectionEnd
-            const next  = content.substring(0, start) + '  ' + content.substring(end)
+            const end = ta.selectionEnd
+            const next = content.substring(0, start) + '  ' + content.substring(end)
             setContent(next)
-            requestAnimationFrame(() => {
-                ta.selectionStart = ta.selectionEnd = start + 2
-            })
+            requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 2 })
         }
     }
 
-    const lines    = content.split('\n').length
-    const chars    = content.length
-    const words    = content.trim() ? content.trim().split(/\s+/).length : 0
+    const lines = content.split('\n').length
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0
+    const chars = content.length
 
     return (
-        <div
-            className="flex flex-col h-full overflow-hidden"
-            style={{ animation: 'fadeIn 0.4s ease' }}
-        >
-            {/* ── Toolbar ── */}
-            <div
-                className="shrink-0 flex items-center justify-between px-7 py-4 gap-4"
-                style={{ background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}
-            >
+        <div className="flex flex-col h-full overflow-hidden" style={{ animation: 'fadeIn 0.3s ease' }}>
+
+            {/* Header */}
+            <div className="shrink-0 px-8 py-5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div>
-                    <h2
-                        className="text-[18px] font-black tracking-tight flex items-center gap-2.5 m-0"
-                        style={{ color: 'var(--text-main)' }}
-                    >
-                        <i className="fa-solid fa-brain text-[15px]" style={{ color: 'var(--primary)' }}></i>
+                    <h2 className="text-[16px] font-bold flex items-center gap-2.5 m-0" style={{ color: 'var(--text-main)' }}>
+                        <i className="fa-solid fa-database text-[14px]" style={{ color: 'var(--primary)' }}></i>
                         Knowledge Base
                     </h2>
                     <p className="text-[12px] mt-0.5 m-0" style={{ color: 'var(--text-muted)' }}>
-                        OPAS injects this memory into every prompt before skill invocation or task execution.
+                        Persistent memory injected into every agent prompt.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                    {/* Stats chips */}
+                    {/* Stats */}
                     {!loading && (
-                        <div
-                            className="hidden md:flex items-center gap-3 px-3 py-2 text-[10px] font-mono"
-                            style={{ color: 'var(--text-muted)', background: 'var(--input-bg)', border: '1px solid var(--border)' }}
-                        >
-                            <span title="Lines">{lines.toLocaleString()} <span style={{ opacity: 0.5 }}>ln</span></span>
-                            <span style={{ opacity: 0.3 }}>·</span>
-                            <span title="Words">{words.toLocaleString()} <span style={{ opacity: 0.5 }}>w</span></span>
-                            <span style={{ opacity: 0.3 }}>·</span>
-                            <span title="Characters">{chars.toLocaleString()} <span style={{ opacity: 0.5 }}>ch</span></span>
+                        <div className="hidden md:flex items-center gap-2 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                            <span>{lines} ln</span>
+                            <span style={{ opacity: 0.3 }}>/</span>
+                            <span>{words} w</span>
+                            <span style={{ opacity: 0.3 }}>/</span>
+                            <span>{chars} ch</span>
                         </div>
                     )}
-
-                    {/* Save button */}
                     <button
                         onClick={handleSave}
                         disabled={isSaving || loading}
-                        className="flex items-center gap-2 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-4 py-2 text-[12px] font-semibold transition-all disabled:opacity-30"
                         style={{
+                            borderRadius: 'var(--radius-md)',
                             background: savedOk ? 'var(--success)' : 'transparent',
                             color: savedOk ? '#fff' : 'var(--primary)',
-                            border: `1px solid ${savedOk ? 'var(--success)' : 'rgba(var(--primary-rgb), 0.4)'}`,
+                            border: `1px solid ${savedOk ? 'var(--success)' : 'rgba(var(--primary-rgb), 0.3)'}`,
                         }}
-                        onMouseEnter={e => { if (!isSaving && !savedOk) { (e.currentTarget as HTMLElement).style.background = 'var(--accent)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb),0.7)'; } }}
-                        onMouseLeave={e => { if (!savedOk) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb),0.4)'; } }}
+                        onMouseEnter={e => { if (!isSaving && !savedOk) (e.currentTarget).style.background = 'var(--accent)' }}
+                        onMouseLeave={e => { if (!savedOk) (e.currentTarget).style.background = 'transparent' }}
                         title="Save (Ctrl+S)"
                     >
-                        {isSaving
-                            ? <><i className="fa-solid fa-spinner fa-spin text-[10px]"></i> Syncing...</>
-                            : savedOk
-                                ? <><i className="fa-solid fa-check text-[10px]"></i> Committed!</>
-                                : <><i className="fa-solid fa-floppy-disk text-[10px]"></i> Commit</>
-                        }
+                        {isSaving ? <><i className="fa-solid fa-spinner fa-spin text-[10px]"></i> Saving...</>
+                            : savedOk ? <><i className="fa-solid fa-check text-[10px]"></i> Saved!</>
+                                : <><i className="fa-solid fa-floppy-disk text-[10px]"></i> Save</>}
                     </button>
                 </div>
             </div>
 
-            {/* ── Editor Area ── */}
-            <div className="flex-grow overflow-hidden flex min-h-0 relative">
-
+            {/* Editor */}
+            <div className="flex-1 overflow-hidden flex min-h-0">
                 {loading ? (
-                    <div className="flex-grow flex items-center justify-center gap-3" style={{ color: 'var(--text-muted)' }}>
-                        <i className="fa-solid fa-spinner fa-spin text-xl" style={{ color: 'var(--primary)' }}></i>
-                        <span className="text-[13px]">Loading memory...</span>
+                    <div className="flex-1 flex items-center justify-center gap-3" style={{ color: 'var(--text-muted)' }}>
+                        <i className="fa-solid fa-spinner fa-spin text-lg" style={{ color: 'var(--primary)' }}></i>
+                        <span className="text-[13px]">Loading...</span>
                     </div>
                 ) : (
                     <>
-                        {/* Line number gutter */}
+                        {/* Line numbers */}
                         <div
-                            className="hidden md:flex flex-col overflow-hidden shrink-0 select-none pt-5 pb-5 px-0 w-12 text-right"
+                            className="hidden md:flex flex-col overflow-hidden shrink-0 select-none pt-5 pb-5 w-12 text-right"
                             style={{
-                                background: 'var(--panel)',
                                 borderRight: '1px solid var(--border)',
                                 fontFamily: 'var(--font-mono)',
                                 fontSize: '12px',
                                 lineHeight: '1.75rem',
                                 color: 'var(--text-subtle)',
                             }}
-                            aria-hidden="true"
                         >
                             {Array.from({ length: Math.max(lines, 1) }, (_, i) => (
-                                <div key={i} className="pr-3 leading-7 text-[11px]">
-                                    {i + 1}
-                                </div>
+                                <div key={i} className="pr-3 leading-7 text-[11px]">{i + 1}</div>
                             ))}
                         </div>
 
                         {/* Textarea */}
-                        <div className="flex-grow relative overflow-hidden">
-                            {/* Dot grid texture */}
-                            <div className="absolute inset-0 dot-grid opacity-[0.3] pointer-events-none" />
-
+                        <div className="flex-1 relative overflow-hidden">
                             <textarea
                                 ref={textareaRef}
                                 value={content}
                                 onChange={e => setContent(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 spellCheck={false}
-                                placeholder={`# OPAS Neural Knowledge Base\n\nEnter permanent rules, constraints, API docs, or contextual memory here.\nThis content is injected into every agent prompt automatically.\n\n## Example directives:\n- Always request HITL approval before sending emails\n- Prefer concise responses under 200 words\n- Use markdown formatting in all agent outputs`}
+                                placeholder="# Knowledge Base&#10;&#10;Write rules, constraints, and context here.&#10;This is injected into every agent prompt."
                                 className="w-full h-full resize-none outline-none hide-scrollbar relative z-10"
                                 style={{
                                     background: 'transparent',
@@ -178,34 +150,23 @@ export default function Knowledge() {
                 )}
             </div>
 
-            {/* ── Status Bar ── */}
+            {/* Status bar */}
             <div
                 className="shrink-0 flex items-center justify-between px-5 py-2"
                 style={{
-                    background: 'var(--panel)',
                     borderTop: '1px solid var(--border)',
                     fontSize: '10px',
                     fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-muted)',
-                    opacity: 0.7,
+                    color: 'var(--text-subtle)',
                 }}
             >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <i className="fa-solid fa-file-code text-[9px]"></i>
-                    <span>data/knowledge/knowledge.md</span>
-                    <span style={{ opacity: 0.4 }}>·</span>
-                    <span>Markdown</span>
+                    <span>knowledge.md</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    {savedOk && (
-                        <span style={{ color: 'var(--success)', opacity: 1 }}>
-                            <i className="fa-solid fa-circle-check mr-1 text-[9px]"></i>
-                            Saved
-                        </span>
-                    )}
-                    <span>Ctrl+S to save</span>
-                    <span style={{ opacity: 0.4 }}>·</span>
-                    <span>Tab for indent</span>
+                <div className="flex items-center gap-2">
+                    {savedOk && <span style={{ color: 'var(--success)' }}><i className="fa-solid fa-check mr-0.5"></i> Saved</span>}
+                    <span>Ctrl+S</span>
                 </div>
             </div>
         </div>

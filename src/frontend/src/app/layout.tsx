@@ -16,8 +16,8 @@ const mono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'OPAS | Autonomous Assistant',
-  description: 'A local, secure, and continuous autonomous agent.',
+  title: 'OPAS | Autonomous Agent Platform',
+  description: 'Multi-domain autonomous agent with real tool execution and human-in-the-loop safety.',
 }
 
 export default function RootLayout({

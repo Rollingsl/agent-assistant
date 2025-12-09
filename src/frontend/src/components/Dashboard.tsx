@@ -4,6 +4,7 @@ import Logo from '@/components/Logo'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import type { Task } from '@/app/page'
 
 interface Message {
     id: number
@@ -11,15 +12,13 @@ interface Message {
     sender: string
     content: string
     is_approval_request: boolean
+    msg_type: string
 }
 
-interface Task {
-    id: number
-    title: string
-    description: string
-    status: string
-    deadline: string
-    budget: number
+interface OutputFile {
+    filename: string
+    size: number
+    modified: number
 }
 
 interface DashboardProps {
@@ -28,18 +27,26 @@ interface DashboardProps {
 }
 
 const STATUS_CONFIG: Record<string, { icon: string; color: string; label: string; bg: string }> = {
-    queued:           { icon: 'fa-clock',       color: 'var(--text-muted)', bg: 'var(--border)',            label: 'Queued' },
-    running:          { icon: 'fa-spinner',      color: 'var(--primary)',    bg: 'var(--accent)',             label: 'Running' },
-    waiting_for_user: { icon: 'fa-hand-paper',   color: 'var(--warning)',    bg: 'rgba(var(--warning-rgb), 0.08)', label: 'Awaiting Approval' },
-    completed:        { icon: 'fa-check',        color: 'var(--success)',    bg: 'rgba(var(--success-rgb), 0.08)', label: 'Complete' },
-    approved:         { icon: 'fa-check-double', color: 'var(--success)',    bg: 'rgba(var(--success-rgb), 0.08)', label: 'Approved' },
+    queued:           { icon: 'fa-circle-pause',  color: 'var(--text-muted)', bg: 'var(--panel-2)',                   label: 'Queued' },
+    running:          { icon: 'fa-circle-play',   color: 'var(--primary)',    bg: 'var(--accent)',                     label: 'Running' },
+    waiting_for_user: { icon: 'fa-shield-halved', color: 'var(--warning)',    bg: 'rgba(var(--warning-rgb), 0.08)',   label: 'Needs Approval' },
+    completed:        { icon: 'fa-circle-check',  color: 'var(--success)',    bg: 'rgba(var(--success-rgb), 0.08)',   label: 'Complete' },
+    approved:         { icon: 'fa-circle-check',  color: 'var(--success)',    bg: 'rgba(var(--success-rgb), 0.08)',   label: 'Approved' },
 }
 
-// ─────────────────────────────────────────────────────
-// LANDING STATE — Command Center Overview
-// ─────────────────────────────────────────────────────
+const DOMAIN_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+    chief_of_staff:     { label: 'Chief of Staff',  color: 'var(--domain-cos)',      icon: 'fa-user-tie' },
+    creative_agency:    { label: 'Creative',         color: 'var(--domain-creative)', icon: 'fa-pen-nib' },
+    sales_intelligence: { label: 'Sales Intel',      color: 'var(--domain-sales)',    icon: 'fa-crosshairs' },
+    custom:             { label: 'Custom',           color: 'var(--domain-custom)',   icon: 'fa-terminal' },
+}
+
+
+/* ─────────────────────────────────────────
+   Landing View — Home / No task selected
+───────────────────────────────────────── */
 function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
-    const [recentTasks, setRecentTasks] = useState<Task[]>([])
+    const [tasks, setTasks] = useState<Task[]>([])
     const [stats, setStats] = useState({ active: 0, completed: 0, waiting: 0 })
 
     useEffect(() => {
@@ -48,9 +55,9 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
                 const res = await fetch('/api/tasks')
                 const data = await res.json()
                 if (data.tasks) {
-                    setRecentTasks(data.tasks.slice(0, 6))
+                    setTasks(data.tasks.slice(0, 8))
                     setStats({
-                        active:    data.tasks.filter((t: Task) => !['completed'].includes(t.status) && t.status !== 'waiting_for_user').length,
+                        active:    data.tasks.filter((t: Task) => !['completed', 'waiting_for_user'].includes(t.status)).length,
                         waiting:   data.tasks.filter((t: Task) => t.status === 'waiting_for_user').length,
                         completed: data.tasks.filter((t: Task) => t.status === 'completed').length,
                     })
@@ -63,286 +70,267 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
     }, [])
 
     return (
-        <div
-            className="h-full w-full overflow-y-auto hide-scrollbar relative"
-            style={{ animation: 'fadeIn 0.5s ease' }}
-        >
-            {/* Dot grid texture */}
-            <div className="absolute inset-0 dot-grid opacity-[0.4] pointer-events-none" />
+        <div className="h-full overflow-y-auto hide-scrollbar relative" style={{ animation: 'fadeIn 0.4s ease' }}>
+            {/* Gradient mesh background */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div
+                    className="absolute"
+                    style={{
+                        top: '-10%', right: '-5%', width: '50%', height: '50%',
+                        background: 'radial-gradient(ellipse, rgba(var(--primary-rgb), 0.06), transparent 70%)',
+                        filter: 'blur(40px)',
+                    }}
+                />
+                <div
+                    className="absolute"
+                    style={{
+                        bottom: '10%', left: '5%', width: '40%', height: '40%',
+                        background: 'radial-gradient(ellipse, rgba(var(--primary-rgb), 0.03), transparent 70%)',
+                        filter: 'blur(40px)',
+                    }}
+                />
+            </div>
 
-            {/* Ambient glow blobs */}
-            <div
-                className="absolute pointer-events-none"
-                style={{
-                    top: '-80px', right: '-80px',
-                    width: 480, height: 480,
-                    background: 'radial-gradient(circle, rgba(var(--primary-rgb),0.06), transparent 70%)',
-                }}
-            />
-            <div
-                className="absolute pointer-events-none"
-                style={{
-                    bottom: '-60px', left: '20%',
-                    width: 360, height: 360,
-                    background: 'radial-gradient(circle, rgba(var(--primary-rgb),0.03), transparent 70%)',
-                }}
-            />
+            <div className="relative z-10 max-w-4xl mx-auto px-10 py-12 flex flex-col gap-10">
 
-            <div className="relative z-10 max-w-5xl mx-auto px-10 py-10 flex flex-col gap-10">
-
-                {/* ── Hero header ── */}
-                <div className="flex items-center justify-between gap-6 flex-wrap">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div style={{ color: 'var(--primary)' }}><Logo size={36} /></div>
-                            <div
-                                className="flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em]"
-                                style={{
-                                    color: 'var(--success)',
-                                    background: 'rgba(var(--success-rgb), 0.08)',
-                                    border: '1px solid rgba(var(--success-rgb), 0.2)',
-                                }}
-                            >
-                                <span
-                                    className="inline-block w-1.5 h-1.5 rounded-full"
-                                    style={{ background: 'var(--success)', animation: 'breathe 2s ease-in-out infinite' }}
-                                />
-                                Systems Online
-                            </div>
-                        </div>
-                        <h1
-                            className="text-4xl font-black tracking-tight leading-none"
-                            style={{ color: 'var(--text-main)' }}
+                {/* Hero */}
+                <div>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div style={{ color: 'var(--primary)' }}><Logo size={32} /></div>
+                        <div
+                            className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold"
+                            style={{
+                                borderRadius: 'var(--radius-sm)',
+                                color: 'var(--success)',
+                                background: 'rgba(var(--success-rgb), 0.08)',
+                                border: '1px solid rgba(var(--success-rgb), 0.15)',
+                            }}
                         >
-                            Command Center
-                        </h1>
-                        <p className="text-[15px] mt-2 font-medium" style={{ color: 'var(--text-muted)' }}>
-                            OPAS is standing by. Delegate a mission from the sidebar.
-                        </p>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--success)', animation: 'breathe 2s infinite' }} />
+                            Online
+                        </div>
                     </div>
-
-                    {/* Stat cards */}
-                    <div className="flex items-stretch gap-3">
-                        {[
-                            { value: stats.active,    label: 'Active',    color: 'var(--primary)',  rgb: 'var(--primary-rgb)' },
-                            { value: stats.waiting,   label: 'Approval',  color: 'var(--warning)',  rgb: 'var(--warning-rgb)' },
-                            { value: stats.completed, label: 'Completed', color: 'var(--success)',  rgb: 'var(--success-rgb)' },
-                        ].map(s => (
-                            <div
-                                key={s.label}
-                                className="flex flex-col items-center justify-center px-5 py-4 min-w-[72px]"
-                                style={{
-                                    background: 'var(--panel)',
-                                    border: '1px solid var(--border)',
-                                }}
-                            >
-                                <span
-                                    className="text-3xl font-black font-mono tabular-nums leading-none"
-                                    style={{ color: s.value > 0 ? s.color : 'var(--text-muted)', opacity: s.value > 0 ? 1 : 0.4 }}
-                                >
-                                    {s.value}
-                                </span>
-                                <span className="text-[8px] font-black uppercase tracking-[0.25em] mt-1.5" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                                    {s.label}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+                    <h1 className="text-[32px] font-bold tracking-tight leading-none" style={{ color: 'var(--text-main)' }}>
+                        Good to see you.
+                    </h1>
+                    <p className="text-[15px] mt-2" style={{ color: 'var(--text-secondary)' }}>
+                        Select a mission from the sidebar or create a new one to get started.
+                    </p>
                 </div>
 
-                {/* ── System status strip ── */}
+                {/* Stats */}
                 <div className="grid grid-cols-3 gap-4">
                     {[
-                        { icon: 'fa-microchip',     label: 'Neural Load',  value: 'Dynamic Balanced', ok: true },
-                        { icon: 'fa-shield-halved', label: 'Encryption',   value: 'AES-256 Active',   ok: true },
-                        { icon: 'fa-server',        label: 'LLM Gateway',  value: 'Operational',      ok: true },
-                    ].map(item => (
+                        { val: stats.active,    label: 'Active',   color: 'var(--primary)',  rgb: 'var(--primary-rgb)' },
+                        { val: stats.waiting,   label: 'Awaiting',  color: 'var(--warning)',  rgb: 'var(--warning-rgb)' },
+                        { val: stats.completed, label: 'Done',      color: 'var(--success)',  rgb: 'var(--success-rgb)' },
+                    ].map(s => (
                         <div
-                            key={item.label}
-                            className="flex items-center gap-4 px-5 py-4 group transition-all duration-200"
+                            key={s.label}
+                            className="flex items-center gap-4 px-5 py-4 transition-all duration-200"
                             style={{
+                                borderRadius: 'var(--radius-lg)',
                                 background: 'var(--panel)',
                                 border: '1px solid var(--border)',
                             }}
-                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.3)'}
-                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'}
                         >
-                            <div
-                                className="w-9 h-9 flex items-center justify-center shrink-0"
-                                style={{
-                                    background: 'var(--accent)',
-                                    color: 'var(--primary)',
-                                    border: '1px solid rgba(var(--primary-rgb), 0.15)',
-                                }}
+                            <span
+                                className="text-[28px] font-bold font-mono tabular-nums"
+                                style={{ color: s.val > 0 ? s.color : 'var(--text-subtle)' }}
                             >
-                                <i className={`fa-solid ${item.icon} text-[13px]`}></i>
-                            </div>
-                            <div>
-                                <div className="text-[8px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{item.label}</div>
-                                <div className="text-[12px] font-bold font-mono mt-0.5" style={{ color: 'var(--text-main)' }}>{item.value}</div>
-                            </div>
-                            <div
-                                className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
-                                style={{
-                                    background: 'var(--success)',
-                                    boxShadow: '0 0 6px rgba(var(--success-rgb), 0.7)',
-                                    animation: 'breathe 2.5s ease-in-out infinite',
-                                }}
-                            />
+                                {s.val}
+                            </span>
+                            <span className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>{s.label}</span>
                         </div>
                     ))}
                 </div>
 
-                {/* ── Recent Operations ── */}
-                <div>
-                    <div
-                        className="flex items-center justify-between pb-4 mb-5"
-                        style={{ borderBottom: '1px solid var(--border)' }}
-                    >
-                        <h3 className="text-[13px] font-black uppercase tracking-[0.15em] flex items-center gap-2.5" style={{ color: 'var(--text-main)' }}>
-                            <i className="fa-solid fa-list-ul text-[11px]" style={{ color: 'var(--primary)' }}></i>
-                            Recent Operations
+                {/* Recent missions */}
+                {tasks.length > 0 && (
+                    <div>
+                        <h3 className="text-[13px] font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                            <i className="fa-solid fa-clock-rotate-left text-[11px]" style={{ color: 'var(--text-muted)' }}></i>
+                            Recent Missions
                         </h3>
-                        {recentTasks.length > 0 && (
-                            <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>
-                                {recentTasks.length} operation{recentTasks.length !== 1 ? 's' : ''}
-                            </span>
-                        )}
-                    </div>
-
-                    {recentTasks.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-20 gap-4"
-                            style={{
-                                background: 'var(--panel)',
-                                border: '1px dashed var(--border)',
-                            }}
-                        >
-                            <div
-                                className="w-12 h-12 flex items-center justify-center"
-                                style={{ background: 'var(--accent)', border: '1px solid var(--border)', color: 'var(--primary)', opacity: 0.5 }}
-                            >
-                                <i className="fa-solid fa-inbox text-xl"></i>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[13px] font-semibold" style={{ color: 'var(--text-muted)' }}>No operations yet</p>
-                                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                                    Click <strong style={{ color: 'var(--primary)' }}>New Mission</strong> in the sidebar to begin.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {recentTasks.map((t, i) => {
+                        <div className="flex flex-col gap-2">
+                            {tasks.map((t, i) => {
                                 const sc = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.queued
+                                const dc = DOMAIN_CONFIG[t.category] || DOMAIN_CONFIG.custom
+                                const pct = t.budget > 0 ? Math.min(((t.tokens_used || 0) / t.budget) * 100, 100) : 0
+
                                 return (
                                     <div
                                         key={t.id}
                                         onClick={() => setActiveTask(t)}
-                                        className="cursor-pointer group flex flex-col p-5 transition-all duration-200"
+                                        className="cursor-pointer flex items-center gap-4 px-5 py-3.5 group transition-all duration-200"
                                         style={{
+                                            borderRadius: 'var(--radius-md)',
                                             background: 'var(--panel)',
                                             border: '1px solid var(--border)',
-                                            animation: `fadeInUp 0.4s ease ${i * 0.05}s both`,
+                                            animation: `fadeInUp 0.3s ease ${i * 0.04}s both`,
                                         }}
-                                        onMouseEnter={e => {
-                                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb), 0.35)';
-                                            (e.currentTarget as HTMLElement).style.background = 'var(--panel-2)';
-                                        }}
-                                        onMouseLeave={e => {
-                                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                                            (e.currentTarget as HTMLElement).style.background = 'var(--panel)';
-                                        }}
+                                        onMouseEnter={e => { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--panel-2)' }}
+                                        onMouseLeave={e => { (e.currentTarget).style.borderColor = 'var(--border)'; (e.currentTarget).style.background = 'var(--panel)' }}
                                     >
-                                        {/* Top row: ID + status */}
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span
-                                                className="text-[9px] font-black font-mono tracking-[0.12em]"
-                                                style={{ color: 'var(--text-muted)', opacity: 0.7 }}
-                                            >
-                                                OP-{String(t.id).padStart(3, '0')}
-                                            </span>
-                                            <span
-                                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5"
-                                                style={{
-                                                    color: sc.color,
-                                                    background: sc.bg,
-                                                    border: `1px solid ${sc.color}30`,
-                                                }}
-                                            >
-                                                <i className={`fa-solid ${sc.icon} text-[8px] ${t.status === 'running' ? 'fa-spin' : ''}`}></i>
-                                                {sc.label}
-                                            </span>
+                                        {/* Domain dot */}
+                                        <div
+                                            className="w-8 h-8 flex items-center justify-center shrink-0"
+                                            style={{
+                                                borderRadius: 'var(--radius-md)',
+                                                background: `${dc.color}14`,
+                                                color: dc.color,
+                                            }}
+                                        >
+                                            <i className={`fa-solid ${dc.icon} text-[12px]`}></i>
                                         </div>
 
-                                        {/* Title */}
-                                        <h4
-                                            className="text-[14px] font-bold leading-snug transition-colors mb-2"
-                                            style={{ color: 'var(--text-main)' }}
-                                        >
-                                            {t.title}
-                                        </h4>
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-main)' }}>{t.title}</div>
+                                            <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{t.description}</div>
+                                        </div>
 
-                                        {/* Description preview */}
-                                        {t.description && (
-                                            <p
-                                                className="text-[12px] leading-relaxed mb-4"
-                                                style={{
-                                                    color: 'var(--text-muted)',
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 3,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    overflow: 'hidden',
-                                                }}
+                                        {/* Progress */}
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            <div className="w-16 h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: sc.color }} />
+                                            </div>
+                                            <span
+                                                className="text-[10px] font-semibold px-2 py-0.5"
+                                                style={{ borderRadius: 'var(--radius-sm)', color: sc.color, background: sc.bg }}
                                             >
-                                                {t.description}
-                                            </p>
-                                        )}
-
-                                        {/* Metadata footer */}
-                                        <div
-                                            className="flex items-center justify-between mt-auto pt-3"
-                                            style={{ borderTop: '1px solid var(--border)' }}
-                                        >
-                                            <span className="text-[10px] font-mono tabular-nums flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                                                <i className="fa-solid fa-microchip text-[8px] opacity-40"></i>
-                                                {t.budget.toLocaleString()} tokens
-                                            </span>
-                                            <span className="text-[10px] font-mono flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-                                                <i className="fa-regular fa-calendar text-[8px] opacity-40"></i>
-                                                {t.deadline || 'No deadline'}
+                                                {sc.label}
                                             </span>
                                         </div>
                                     </div>
                                 )
                             })}
                         </div>
-                    )}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+
+/* ─────────────────────────────────────────
+   Timeline Dot
+───────────────────────────────────────── */
+function TimelineDot({ type, color }: { type: 'agent' | 'tool_call' | 'tool_result' | 'user' | 'approval'; color?: string }) {
+    const icons: Record<string, string> = {
+        agent: 'fa-robot',
+        tool_call: 'fa-wrench',
+        tool_result: 'fa-arrow-down',
+        user: 'fa-user',
+        approval: 'fa-shield-halved',
+    }
+    const bg: Record<string, string> = {
+        agent: 'var(--panel-2)',
+        tool_call: 'rgba(var(--primary-rgb), 0.12)',
+        tool_result: 'rgba(var(--success-rgb), 0.12)',
+        user: 'var(--primary)',
+        approval: 'rgba(var(--warning-rgb), 0.12)',
+    }
+    const clr: Record<string, string> = {
+        agent: 'var(--text-muted)',
+        tool_call: 'var(--primary)',
+        tool_result: 'var(--success)',
+        user: '#fff',
+        approval: 'var(--warning)',
+    }
+
+    return (
+        <div
+            className="w-9 h-9 flex items-center justify-center shrink-0 z-10"
+            style={{
+                borderRadius: 'var(--radius-md)',
+                background: bg[type] || 'var(--panel-2)',
+                color: color || clr[type] || 'var(--text-muted)',
+                border: `1px solid ${type === 'user' ? 'transparent' : 'var(--border)'}`,
+            }}
+        >
+            <i className={`fa-solid ${icons[type] || 'fa-circle'} text-[11px]`}></i>
+        </div>
+    )
+}
+
+
+/* ─────────────────────────────────────────
+   Generated Files
+───────────────────────────────────────── */
+function GeneratedFiles() {
+    const [files, setFiles] = useState<OutputFile[]>([])
+
+    useEffect(() => {
+        fetch('/api/outputs').then(r => r.json()).then(d => { if (d.files) setFiles(d.files) }).catch(() => {})
+    }, [])
+
+    if (files.length === 0) return null
+
+    return (
+        <div className="flex items-start gap-3 relative">
+            <TimelineDot type="tool_result" />
+            <div className="flex-1 pt-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--success)' }}>
+                    <i className="fa-solid fa-folder-open mr-1"></i> Generated Artifacts
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {files.map(f => (
+                        <a
+                            key={f.filename}
+                            href={`/api/outputs/${f.filename}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 transition-all duration-200 no-underline"
+                            style={{
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--panel)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text-main)',
+                            }}
+                            onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(var(--success-rgb), 0.3)' }}
+                            onMouseLeave={e => { (e.currentTarget).style.borderColor = 'var(--border)' }}
+                        >
+                            <i className="fa-solid fa-file-lines text-[11px]" style={{ color: 'var(--success)' }}></i>
+                            <span className="text-[12px] font-medium">{f.filename}</span>
+                            <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{(f.size / 1024).toFixed(1)}KB</span>
+                        </a>
+                    ))}
                 </div>
             </div>
         </div>
     )
 }
 
-// ─────────────────────────────────────────────────────
-// ACTIVE TASK VIEW — Mission Log
-// ─────────────────────────────────────────────────────
+
+/* ─────────────────────────────────────────
+   Task View — Timeline Message Stream
+───────────────────────────────────────── */
 function TaskView({ activeTask }: { activeTask: Task }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [isApproving, setIsApproving] = useState(false)
+    const [liveTask, setLiveTask] = useState<Task>(activeTask)
     const bottomRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         setMessages([])
-        const fetchMsgs = async () => {
+        setLiveTask(activeTask)
+        const fetchData = async () => {
             try {
-                const res = await fetch(`/api/tasks/${activeTask.id}/messages`)
-                const data = await res.json()
-                setMessages(data.messages || [])
+                const [msgRes, taskRes] = await Promise.all([
+                    fetch(`/api/tasks/${activeTask.id}/messages`),
+                    fetch('/api/tasks'),
+                ])
+                const msgData = await msgRes.json()
+                setMessages(msgData.messages || [])
+                const taskData = await taskRes.json()
+                const updated = taskData.tasks?.find((t: Task) => t.id === activeTask.id)
+                if (updated) setLiveTask(updated)
             } catch { /* silent */ }
         }
-        fetchMsgs()
-        const iv = setInterval(fetchMsgs, 3000)
+        fetchData()
+        const iv = setInterval(fetchData, 3000)
         return () => clearInterval(iv)
     }, [activeTask.id])
 
@@ -360,231 +348,213 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                 body: JSON.stringify({ content: 'ACTION: APPROVED', is_approval: true }),
             })
             await new Promise(r => setTimeout(r, 500))
-        } catch (e) {
-            console.error('Approval failed', e)
-        } finally {
-            setIsApproving(false)
-        }
+        } catch (e) { console.error(e) }
+        finally { setIsApproving(false) }
     }
 
-    const sc = STATUS_CONFIG[activeTask.status] ?? STATUS_CONFIG.queued
-    const isRunning = activeTask.status === 'running'
-    const isWaiting = activeTask.status === 'waiting_for_user'
+    const sc = STATUS_CONFIG[liveTask.status] ?? STATUS_CONFIG.queued
+    const dc = DOMAIN_CONFIG[liveTask.category] || DOMAIN_CONFIG.custom
+    const isRunning = liveTask.status === 'running'
+    const isWaiting = liveTask.status === 'waiting_for_user'
+    const isComplete = liveTask.status === 'completed'
+    const tokensUsed = liveTask.tokens_used || 0
+    const tokenPct = liveTask.budget > 0 ? Math.min((tokensUsed / liveTask.budget) * 100, 100) : 0
 
     return (
-        <div
-            className="h-full w-full flex flex-col"
-            style={{ animation: 'fadeIn 0.4s ease' }}
-        >
-            {/* ── Task header ── */}
-            <div
-                className="shrink-0 flex flex-col"
-                style={{ background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}
-            >
-                {/* Top bar: logo, title, status, metadata */}
-                <div className="flex items-center justify-between px-7 py-3.5 gap-4">
+        <div className="h-full flex flex-col" style={{ animation: 'fadeIn 0.3s ease' }}>
+
+            {/* ── Header ── */}
+            <div className="shrink-0" style={{ background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
+                <div className="flex items-center justify-between px-8 py-4 gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div style={{ color: 'var(--primary)', opacity: 0.7 }}>
-                            <Logo size={18} />
-                        </div>
-                        <div className="w-px h-5 shrink-0" style={{ background: 'var(--border)' }} />
-                        <h2
-                            className="text-[14px] font-bold tracking-tight truncate"
-                            style={{ color: 'var(--text-main)' }}
+                        <div
+                            className="w-8 h-8 flex items-center justify-center shrink-0"
+                            style={{ borderRadius: 'var(--radius-md)', background: `${dc.color}14`, color: dc.color }}
                         >
-                            {activeTask.title}
-                        </h2>
+                            <i className={`fa-solid ${dc.icon} text-[12px]`}></i>
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-[15px] font-bold truncate" style={{ color: 'var(--text-main)' }}>{liveTask.title}</h2>
+                                <span className="text-[9px] font-mono shrink-0" style={{ color: 'var(--text-subtle)' }}>#{liveTask.id}</span>
+                            </div>
+                            {liveTask.description && (
+                                <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{liveTask.description}</p>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
+                        {/* Token bar */}
+                        <div className="flex items-center gap-2">
+                            <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                                <div
+                                    className="h-full rounded-full transition-all duration-700"
+                                    style={{
+                                        width: `${tokenPct}%`,
+                                        background: tokenPct > 85 ? 'var(--warning)' : dc.color,
+                                    }}
+                                />
+                            </div>
+                            <span className="text-[10px] font-mono tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                                {tokensUsed.toLocaleString()}<span style={{ opacity: 0.4 }}>/{liveTask.budget.toLocaleString()}</span>
+                            </span>
+                        </div>
+
+                        {/* Status badge */}
                         <span
-                            className="flex items-center gap-1.5 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]"
-                            style={{ color: sc.color, background: sc.bg, border: `1px solid ${sc.color}35` }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold"
+                            style={{ borderRadius: 'var(--radius-sm)', color: sc.color, background: sc.bg, border: `1px solid ${sc.color}25` }}
                         >
                             <i className={`fa-solid ${sc.icon} text-[9px] ${isRunning ? 'fa-spin' : ''}`}></i>
                             {sc.label}
                         </span>
-                        <span className="text-[9px] font-black font-mono tracking-[0.18em]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                            OP-{String(activeTask.id).padStart(3, '0')}
-                        </span>
-                        <span className="hidden md:flex items-center gap-1 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
-                            <i className="fa-solid fa-microchip text-[8px] opacity-40"></i>
-                            {activeTask.budget.toLocaleString()}
-                        </span>
-                        {activeTask.deadline && (
-                            <span className="hidden md:flex items-center gap-1 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
-                                <i className="fa-regular fa-calendar text-[8px] opacity-40"></i>
-                                {activeTask.deadline}
-                            </span>
-                        )}
                     </div>
                 </div>
-
-                {/* Description strip */}
-                {activeTask.description && (
-                    <div
-                        className="px-7 pb-3.5 flex items-start gap-2"
-                        style={{ marginTop: '-2px' }}
-                    >
-                        <i
-                            className="fa-solid fa-quote-left text-[9px] mt-0.5 shrink-0"
-                            style={{ color: 'var(--primary)', opacity: 0.35 }}
-                        ></i>
-                        <p
-                            className="text-[12px] leading-relaxed m-0"
-                            style={{
-                                color: 'var(--text-muted)',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                            }}
-                        >
-                            {activeTask.description}
-                        </p>
-                    </div>
-                )}
             </div>
 
-            {/* ── Message area ── */}
-            <div className="flex-grow overflow-y-auto hide-scrollbar relative">
-                {/* Dot grid */}
-                <div className="absolute inset-0 dot-grid opacity-[0.35] pointer-events-none" />
-
+            {/* ── Message Stream (Timeline) ── */}
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
                 {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center gap-4 relative z-10">
+                    <div className="h-full flex flex-col items-center justify-center gap-4">
                         <div
                             className="w-12 h-12 flex items-center justify-center"
-                            style={{
-                                color: 'var(--primary)',
-                                border: '1px solid rgba(var(--primary-rgb), 0.2)',
-                                background: 'var(--accent)',
-                            }}
+                            style={{ borderRadius: 'var(--radius-lg)', background: 'var(--accent)', color: 'var(--primary)' }}
                         >
-                            <i className="fa-solid fa-hourglass-half text-xl" style={{ animation: 'breathe 2s ease-in-out infinite' }}></i>
+                            <i className="fa-solid fa-satellite-dish text-[18px]" style={{ animation: 'breathe 2s infinite' }}></i>
                         </div>
                         <div className="text-center">
-                            <p className="text-[13px] font-semibold" style={{ color: 'var(--text-muted)' }}>Initializing Mission</p>
-                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                                The agent is warming up — logs will appear shortly.
-                            </p>
+                            <p className="text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>Initializing agent...</p>
+                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Logs will appear as the agent works.</p>
                         </div>
-                        {isRunning && (
-                            <div className="flex items-center gap-1.5">
-                                {[0, 0.2, 0.4].map((d, i) => (
-                                    <div
-                                        key={i}
-                                        className="w-1.5 h-1.5 rounded-full"
-                                        style={{
-                                            background: 'var(--primary)',
-                                            animation: `breathe 1.2s ease-in-out ${d}s infinite`,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        )}
                     </div>
                 ) : (
-                    <div className="relative z-10 max-w-3xl w-full mx-auto px-8 py-8 flex flex-col gap-6">
+                    <div className="max-w-3xl mx-auto px-8 py-8 flex flex-col gap-5 relative">
+                        {/* Timeline connector line */}
+                        <div
+                            className="absolute left-[54px] top-8 bottom-8 w-px"
+                            style={{ background: 'var(--border)' }}
+                        />
+
                         {messages.map((m, i) => {
                             const isUser = m.sender === 'user'
-                            return (
-                                <div
-                                    key={m.id ?? i}
-                                    className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
-                                    style={{ animation: `fadeInUp 0.3s ease ${Math.min(i * 0.04, 0.3)}s both` }}
-                                >
-                                    {/* Avatar */}
-                                    <div
-                                        className="shrink-0 w-7 h-7 flex items-center justify-center text-[10px] mt-0.5"
-                                        style={{
-                                            background: isUser ? 'var(--primary)' : 'var(--panel-2)',
-                                            color: isUser ? 'var(--bg)' : 'var(--primary)',
-                                            border: isUser ? 'none' : '1px solid var(--border)',
-                                        }}
-                                    >
-                                        <i className={`fa-solid ${isUser ? 'fa-user' : 'fa-robot'} text-[9px]`}></i>
+                            const msgType = (m.msg_type || 'agent') as string
+
+                            // ── Tool Call Block ──
+                            if (msgType === 'tool_call') {
+                                return (
+                                    <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
+                                        <TimelineDot type="tool_call" />
+                                        <div className="flex-1 exec-block mt-0.5">
+                                            <div className="exec-block-header">
+                                                <i className="fa-solid fa-terminal text-[9px]" style={{ color: 'var(--primary)' }}></i>
+                                                <span style={{ color: 'var(--primary)' }}>Tool Call</span>
+                                            </div>
+                                            <div className="exec-block-body" style={{ color: 'var(--text-secondary)' }}>
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                                            </div>
+                                        </div>
                                     </div>
+                                )
+                            }
 
-                                    {/* Bubble */}
-                                    <div
-                                        className="flex flex-col gap-2 max-w-[82%]"
-                                    >
-                                        {/* Sender label */}
-                                        <span
-                                            className={`text-[9px] font-black uppercase tracking-[0.18em] ${isUser ? 'text-right' : 'text-left'}`}
-                                            style={{ color: isUser ? 'var(--primary)' : 'var(--text-muted)', opacity: 0.7 }}
-                                        >
-                                            {isUser ? 'Commander' : 'OPAS'}
-                                        </span>
+                            // ── Tool Result Block ──
+                            if (msgType === 'tool_result') {
+                                return (
+                                    <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
+                                        <TimelineDot type="tool_result" />
+                                        <div className="flex-1 exec-block mt-0.5">
+                                            <div className="exec-block-header">
+                                                <i className="fa-solid fa-arrow-down text-[9px]" style={{ color: 'var(--success)' }}></i>
+                                                <span style={{ color: 'var(--success)' }}>Result</span>
+                                            </div>
+                                            <div className="exec-block-body" style={{ color: 'var(--text-secondary)', maxHeight: 150, overflow: 'auto' }}>
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
 
+                            // ── User message ──
+                            if (isUser) {
+                                return (
+                                    <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
+                                        <TimelineDot type="user" />
+                                        <div className="flex-1 mt-0.5">
+                                            <span className="text-[10px] font-semibold" style={{ color: 'var(--primary)' }}>You</span>
+                                            <div
+                                                className="mt-1 px-4 py-3 text-[13px] leading-relaxed"
+                                                style={{
+                                                    borderRadius: 'var(--radius-md)',
+                                                    background: 'rgba(var(--primary-rgb), 0.06)',
+                                                    border: '1px solid rgba(var(--primary-rgb), 0.15)',
+                                                    color: 'var(--text-main)',
+                                                }}
+                                            >
+                                                {m.content}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            // ── Agent message (with optional HITL) ──
+                            return (
+                                <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
+                                    <TimelineDot type={m.is_approval_request ? 'approval' : 'agent'} />
+                                    <div className="flex-1 mt-0.5">
+                                        <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>OPAS</span>
                                         <div
-                                            className="px-5 py-4 leading-relaxed text-[14px]"
+                                            className="mt-1 px-4 py-3 text-[13px] leading-relaxed"
                                             style={{
-                                                background: isUser
-                                                    ? 'linear-gradient(135deg, rgba(var(--primary-rgb),0.1), rgba(var(--primary-rgb),0.06))'
-                                                    : 'var(--panel)',
-                                                border: `1px solid ${isUser ? 'rgba(var(--primary-rgb),0.25)' : 'var(--border)'}`,
+                                                borderRadius: 'var(--radius-md)',
+                                                background: 'var(--panel)',
+                                                border: '1px solid var(--border)',
                                                 color: 'var(--text-main)',
                                             }}
                                         >
                                             <div className="prose prose-invert max-w-none agent-markdown">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {m.content}
-                                                </ReactMarkdown>
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                                             </div>
 
-                                            {/* HITL Approval Card */}
+                                            {/* HITL Approval Gate */}
                                             {!!m.is_approval_request && (
                                                 <div
-                                                    className="mt-5 p-5 flex flex-col gap-4 relative overflow-hidden"
+                                                    className="mt-4 p-4 flex flex-col gap-3 relative overflow-hidden"
                                                     style={{
-                                                        background: 'rgba(var(--warning-rgb), 0.05)',
-                                                        border: '1px solid rgba(var(--warning-rgb), 0.4)',
-                                                        animation: 'pulseRing 2.5s ease-in-out infinite',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        background: 'rgba(var(--warning-rgb), 0.04)',
+                                                        border: '1px solid rgba(var(--warning-rgb), 0.25)',
                                                     }}
                                                 >
-                                                    {/* Decorative fingerprint watermark */}
-                                                    <i
-                                                        className="fa-solid fa-fingerprint absolute right-4 top-3 text-5xl pointer-events-none"
-                                                        style={{ color: 'var(--warning)', opacity: 0.07 }}
-                                                    ></i>
-
                                                     <div className="flex items-center gap-2">
-                                                        <i className="fa-solid fa-shield-halved text-[12px]" style={{ color: 'var(--warning)' }}></i>
-                                                        <span
-                                                            className="text-[9px] font-black uppercase tracking-[0.25em]"
-                                                            style={{ color: 'var(--warning)' }}
-                                                        >
-                                                            Human-in-the-Loop Intercept
+                                                        <i className="fa-solid fa-shield-halved text-[11px]" style={{ color: 'var(--warning)' }}></i>
+                                                        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--warning)' }}>
+                                                            Authorization Required
                                                         </span>
                                                     </div>
-
-                                                    <p className="text-[13px] leading-relaxed m-0" style={{ color: 'var(--text-muted)' }}>
-                                                        The agent has reached a <strong style={{ color: 'var(--text-main)' }}>high-consequence boundary</strong> and requires your explicit authorization before proceeding. Review the context above carefully.
+                                                    <p className="text-[12px] m-0" style={{ color: 'var(--text-secondary)' }}>
+                                                        The agent needs your approval to execute a high-impact action. Review the details above.
                                                     </p>
-
-                                                    <div className="flex items-center gap-3">
-                                                        <button
-                                                            onClick={approveAction}
-                                                            disabled={isApproving}
-                                                            className="flex items-center gap-2.5 px-6 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            style={{
-                                                                background: 'var(--warning)',
-                                                                color: '#000',
-                                                            }}
-                                                            onMouseEnter={e => { if (!isApproving) (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
-                                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-                                                        >
-                                                            {isApproving
-                                                                ? <><i className="fa-solid fa-spinner fa-spin text-[11px]"></i> Verifying...</>
-                                                                : <><i className="fa-solid fa-fingerprint text-[11px]"></i> Authorize Action</>
-                                                            }
-                                                        </button>
-                                                        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
-                                                            This action cannot be undone.
-                                                        </span>
-                                                    </div>
+                                                    <button
+                                                        onClick={approveAction}
+                                                        disabled={isApproving}
+                                                        className="self-start flex items-center gap-2 px-4 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+                                                        style={{
+                                                            borderRadius: 'var(--radius-md)',
+                                                            background: 'var(--warning)',
+                                                            color: '#000',
+                                                            border: 'none',
+                                                        }}
+                                                        onMouseEnter={e => { if (!isApproving) (e.currentTarget).style.opacity = '0.88' }}
+                                                        onMouseLeave={e => { (e.currentTarget).style.opacity = '1' }}
+                                                    >
+                                                        {isApproving
+                                                            ? <><i className="fa-solid fa-spinner fa-spin text-[10px]"></i> Authorizing...</>
+                                                            : <><i className="fa-solid fa-fingerprint text-[10px]"></i> Authorize</>
+                                                        }
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -593,55 +563,52 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                             )
                         })}
 
-                        {/* Typing indicator when running */}
+                        {/* Thinking indicator */}
                         {isRunning && messages.length > 0 && (
-                            <div className="flex items-start gap-3">
-                                <div
-                                    className="shrink-0 w-7 h-7 flex items-center justify-center"
-                                    style={{
-                                        background: 'var(--panel-2)',
-                                        color: 'var(--primary)',
-                                        border: '1px solid var(--border)',
-                                    }}
-                                >
-                                    <i className="fa-solid fa-robot text-[9px]"></i>
-                                </div>
-                                <div
-                                    className="px-4 py-3 flex items-center gap-1.5"
-                                    style={{
-                                        background: 'var(--panel)',
-                                        border: '1px solid var(--border)',
-                                    }}
-                                >
-                                    {[0, 0.2, 0.4].map((d, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-1.5 h-1.5 rounded-full"
-                                            style={{
-                                                background: 'var(--text-muted)',
-                                                animation: `breathe 1.1s ease-in-out ${d}s infinite`,
-                                            }}
-                                        />
-                                    ))}
+                            <div className="flex items-start gap-3 relative">
+                                <TimelineDot type="agent" />
+                                <div className="flex-1 mt-0.5">
+                                    <div
+                                        className="inline-flex items-center gap-1.5 px-4 py-3"
+                                        style={{
+                                            borderRadius: 'var(--radius-md)',
+                                            background: 'var(--panel)',
+                                            border: '1px solid var(--border)',
+                                        }}
+                                    >
+                                        {[0, 0.15, 0.3].map((d, i) => (
+                                            <div
+                                                key={i}
+                                                className="w-1.5 h-1.5 rounded-full"
+                                                style={{
+                                                    background: 'var(--text-muted)',
+                                                    animation: `dotPulse 1.2s ease-in-out ${d}s infinite`,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Approval needed banner */}
+                        {/* Waiting banner */}
                         {isWaiting && (
                             <div
-                                className="flex items-center gap-3 px-5 py-3 text-[12px] font-semibold"
+                                className="flex items-center gap-2.5 px-4 py-3 text-[12px] font-medium"
                                 style={{
-                                    background: 'rgba(var(--warning-rgb), 0.06)',
-                                    border: '1px solid rgba(var(--warning-rgb), 0.25)',
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'rgba(var(--warning-rgb), 0.05)',
+                                    border: '1px solid rgba(var(--warning-rgb), 0.2)',
                                     color: 'var(--warning)',
-                                    animation: 'pulseRing 2.5s ease-in-out infinite',
                                 }}
                             >
-                                <i className="fa-solid fa-triangle-exclamation text-[13px]"></i>
-                                Your approval is required to continue this operation.
+                                <i className="fa-solid fa-shield-halved text-[12px]"></i>
+                                Waiting for your authorization to continue.
                             </div>
                         )}
+
+                        {/* Files panel */}
+                        {isComplete && <GeneratedFiles />}
 
                         <div ref={bottomRef} />
                     </div>
@@ -651,9 +618,10 @@ function TaskView({ activeTask }: { activeTask: Task }) {
     )
 }
 
-// ─────────────────────────────────────────────────────
-// Main export
-// ─────────────────────────────────────────────────────
+
+/* ─────────────────────────────────────────
+   Main Export
+───────────────────────────────────────── */
 export default function Dashboard({ activeTask, setActiveTask }: DashboardProps) {
     if (!activeTask) return <LandingView setActiveTask={setActiveTask} />
     return <TaskView activeTask={activeTask} />
