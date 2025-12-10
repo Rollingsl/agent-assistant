@@ -192,9 +192,15 @@ function LandingView({ setActiveTask }: { setActiveTask: (t: Task) => void }) {
 
                                         {/* Progress */}
                                         <div className="flex items-center gap-3 shrink-0">
-                                            <div className="w-16 h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: sc.color }} />
-                                            </div>
+                                            {t.execution_mode === 'pipeline' ? (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5" style={{ borderRadius: 'var(--radius-sm)', background: 'rgba(var(--success-rgb), 0.1)', color: 'var(--success)' }}>
+                                                    <i className="fa-solid fa-bolt text-[8px] mr-0.5"></i> AUTO
+                                                </span>
+                                            ) : (
+                                                <div className="w-16 h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                                                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: sc.color }} />
+                                                </div>
+                                            )}
                                             <span
                                                 className="text-[10px] font-semibold px-2 py-0.5"
                                                 style={{ borderRadius: 'var(--radius-sm)', color: sc.color, background: sc.bg }}
@@ -357,6 +363,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
     const isRunning = liveTask.status === 'running'
     const isWaiting = liveTask.status === 'waiting_for_user'
     const isComplete = liveTask.status === 'completed'
+    const isPipeline = liveTask.execution_mode === 'pipeline'
     const tokensUsed = liveTask.tokens_used || 0
     const tokenPct = liveTask.budget > 0 ? Math.min((tokensUsed / liveTask.budget) * 100, 100) : 0
 
@@ -385,21 +392,31 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                        {/* Token bar */}
-                        <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                                <div
-                                    className="h-full rounded-full transition-all duration-700"
-                                    style={{
-                                        width: `${tokenPct}%`,
-                                        background: tokenPct > 85 ? 'var(--warning)' : dc.color,
-                                    }}
-                                />
-                            </div>
-                            <span className="text-[10px] font-mono tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                                {tokensUsed.toLocaleString()}<span style={{ opacity: 0.4 }}>/{liveTask.budget.toLocaleString()}</span>
+                        {/* Pipeline badge or Token bar */}
+                        {isPipeline ? (
+                            <span
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold"
+                                style={{ borderRadius: 'var(--radius-sm)', color: 'var(--success)', background: 'rgba(var(--success-rgb), 0.08)', border: '1px solid rgba(var(--success-rgb), 0.2)' }}
+                            >
+                                <i className="fa-solid fa-bolt text-[9px]"></i>
+                                Autopilot &middot; 0 tokens
                             </span>
-                        </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                                    <div
+                                        className="h-full rounded-full transition-all duration-700"
+                                        style={{
+                                            width: `${tokenPct}%`,
+                                            background: tokenPct > 85 ? 'var(--warning)' : dc.color,
+                                        }}
+                                    />
+                                </div>
+                                <span className="text-[10px] font-mono tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                                    {tokensUsed.toLocaleString()}<span style={{ opacity: 0.4 }}>/{liveTask.budget.toLocaleString()}</span>
+                                </span>
+                            </div>
+                        )}
 
                         {/* Status badge */}
                         <span

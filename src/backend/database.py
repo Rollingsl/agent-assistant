@@ -36,6 +36,7 @@ def init_db():
         "ALTER TABLE tasks ADD COLUMN agent_state TEXT",
         "ALTER TABLE tasks ADD COLUMN tokens_used INTEGER DEFAULT 0",
         "ALTER TABLE messages ADD COLUMN msg_type TEXT DEFAULT 'agent'",
+        "ALTER TABLE tasks ADD COLUMN execution_mode TEXT DEFAULT 'agent'",
     ]
     for sql in migrations:
         try:
@@ -46,12 +47,12 @@ def init_db():
 
     conn.close()
 
-def add_task(title: str, description: str, deadline: str, budget: int, category: str = "custom"):
+def add_task(title: str, description: str, deadline: str, budget: int, category: str = "custom", execution_mode: str = "agent"):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute(
-        "INSERT INTO tasks (title, description, status, deadline, budget, category, created_at) VALUES (?, ?, 'queued', ?, ?, ?, ?)",
-        (title, description, deadline, budget, category, datetime.now().isoformat())
+        "INSERT INTO tasks (title, description, status, deadline, budget, category, execution_mode, created_at) VALUES (?, ?, 'queued', ?, ?, ?, ?, ?)",
+        (title, description, deadline, budget, category, execution_mode, datetime.now().isoformat())
     )
     task_id = c.lastrowid
     conn.commit()

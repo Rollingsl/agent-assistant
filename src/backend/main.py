@@ -8,6 +8,8 @@ import uvicorn
 from pydantic import BaseModel
 from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status
 from src.backend.worker import process_background_tasks
+from src.backend.tools.registry import execute_tool, DANGEROUS_TOOLS
+from src.backend.pipelines import get_available_pipelines
 
 # Load environment variables from .env file at startup
 load_dotenv()
@@ -56,6 +58,7 @@ class TaskRequest(BaseModel):
     deadline: str
     budget: int
     category: str = "custom"
+    execution_mode: str = "agent"  # "agent" (LLM) or "pipeline" (zero tokens)
 
 class MessageRequest(BaseModel):
     content: str
@@ -63,6 +66,10 @@ class MessageRequest(BaseModel):
 
 class KnowledgeUpdateRequest(BaseModel):
     content: str
+
+class ToolExecuteRequest(BaseModel):
+    tool: str
+    arguments: dict
 
 class ConfigUpdateRequest(BaseModel):
     # Dict of { ENV_KEY: "value" }. Empty string means "clear override".
@@ -131,7 +138,7 @@ async def fetch_tasks():
 
 @app.post("/api/tasks")
 async def create_new_task(req: TaskRequest):
-    task_id = add_task(req.title, req.description, req.deadline, req.budget, req.category)
+    task_id = add_task(req.title, req.description, req.deadline, req.budget, req.category, req.execution_mode)
     return {"message": "Success", "task_id": task_id}
 
 @app.get("/api/tasks/{task_id}/messages")
@@ -189,6 +196,26 @@ async def get_output_file(filename: str):
     if not os.path.isfile(filepath):
         return {"error": "File not found"}
     return FileResponse(filepath, filename=safe_name)
+
+
+# ---------------------------------------------------------------------------
+# Direct Tool Execution (LLM-free)
+# ---------------------------------------------------------------------------
+@app.post("/api/tools/execute")
+async def execute_tool_directly(req: ToolExecuteRequest):
+    """Execute a tool directly without LLM. Only safe tools allowed."""
+    if req.tool in DANGEROUS_TOOLS:
+        return {"success": False, "error": f"Tool '{req.tool}' requires approval. Use a mission instead."}
+    try:
+        result = execute_tool(req.tool, req.arguments)
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/pipelines")
+async def list_pipelines():
+    """List all available autopilot pipelines."""
+    return {"pipelines": get_available_pipelines()}
 
 
 # ---------------------------------------------------------------------------

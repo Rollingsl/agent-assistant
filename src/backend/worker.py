@@ -6,6 +6,7 @@ from src.backend.database import (
 )
 from src.backend.core import call_llm_with_tools, _build_system_prompt
 from src.backend.tools.registry import DANGEROUS_TOOLS, execute_tool, parse_tool_args
+from src.backend.pipelines import run_pipeline, resume_pipeline, get_pipeline
 
 MAX_ITERATIONS = 15
 
@@ -44,11 +45,22 @@ def _run_agent_loop(task: dict):
         response = call_llm_with_tools(conversation, category)
 
         if response is None:
-            add_message(
-                task_id, "agent",
-                "[Mock Mode] No API key configured. Add your OPENAI_API_KEY in Integrations to enable real agent execution.",
-                msg_type="agent"
-            )
+            # No LLM available — try pipeline fallback if template matches
+            pipeline = get_pipeline(task.get("title", ""))
+            if pipeline:
+                add_message(task_id, "agent",
+                    "No API key configured. Switching to **Autopilot** (pipeline mode)...",
+                    msg_type="agent")
+                update_task_status(task_id, "running")
+                run_pipeline(task)
+                return
+            else:
+                add_message(
+                    task_id, "agent",
+                    "No API key configured and no pipeline available for this task. "
+                    "Add your OPENAI_API_KEY in Integrations, or use a template with Autopilot mode.",
+                    msg_type="agent"
+                )
             break
 
         # Track token usage
@@ -299,9 +311,31 @@ def _resume_agent_loop(task: dict):
     print(f"[WORKER] Task {task_id} completed after resume. Tokens: {total_tokens:,}")
 
 
+def _is_pipeline_task(task: dict) -> bool:
+    """Check if task should use pipeline mode (LLM-free execution)."""
+    mode = task.get("execution_mode", "agent") or "agent"
+    if mode == "pipeline":
+        return True
+    # Auto-detect: if mode is pipeline but title matches a known template
+    return False
+
+
+def _is_pipeline_resume(task: dict) -> bool:
+    """Check if a resuming task was a pipeline (by checking saved state)."""
+    state_json = get_agent_state(task["id"])
+    if state_json:
+        try:
+            state = json.loads(state_json)
+            return state.get("pipeline", False)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return False
+
+
 def process_background_tasks():
     """
     Continuous daemon thread that processes queued and approved tasks.
+    Routes to either pipeline (LLM-free) or agent loop (LLM) based on execution_mode.
     """
     print("[WORKER] Background Task Engine Started.")
 
@@ -314,12 +348,23 @@ def process_background_tasks():
                 if t["status"] == "queued":
                     print(f"[WORKER] Starting task {task_id}: {t['title']}")
                     update_task_status(task_id, "running")
-                    _run_agent_loop(t)
+
+                    if _is_pipeline_task(t):
+                        print(f"[WORKER] Using PIPELINE mode (zero tokens)")
+                        run_pipeline(t)
+                    else:
+                        print(f"[WORKER] Using AGENT mode (LLM)")
+                        _run_agent_loop(t)
 
                 elif t["status"] == "approved":
                     print(f"[WORKER] Resuming task {task_id} after approval")
                     update_task_status(task_id, "running")
-                    _resume_agent_loop(t)
+
+                    if _is_pipeline_resume(t):
+                        print(f"[WORKER] Resuming PIPELINE after HITL")
+                        resume_pipeline(t)
+                    else:
+                        _resume_agent_loop(t)
 
         except Exception as e:
             print(f"[WORKER ERROR] {e}")

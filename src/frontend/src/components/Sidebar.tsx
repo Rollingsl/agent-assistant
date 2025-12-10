@@ -76,6 +76,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const [selectedCategory, setSelectedCategory] = useState<string>('custom')
     const [formTitle, setFormTitle] = useState('')
     const [formDescription, setFormDescription] = useState('')
+    const [executionMode, setExecutionMode] = useState<'agent' | 'pipeline'>('agent')
 
     useEffect(() => {
         const t = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora'
@@ -103,6 +104,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const handleTemplateClick = (tpl: { title: string; description: string }) => {
         setFormTitle(tpl.title)
         setFormDescription(tpl.description)
+        setExecutionMode('pipeline') // Auto-select pipeline for templates (zero tokens)
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,6 +121,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                     deadline: fd.get('deadline') || '',
                     budget: parseInt(fd.get('budget') as string, 10) || 50000,
                     category: selectedCategory,
+                    execution_mode: executionMode,
                 })
             })
         } finally {
@@ -127,6 +130,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
             setFormTitle('')
             setFormDescription('')
             setSelectedCategory('custom')
+            setExecutionMode('agent')
         }
     }
 
@@ -313,6 +317,14 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                                         <span className="text-[12px] font-semibold truncate flex-1" style={{ color: 'var(--text-main)' }}>
                                                             {t.title}
                                                         </span>
+                                                        {t.execution_mode === 'pipeline' && (
+                                                            <span
+                                                                className="text-[8px] font-bold px-1 py-0.5 shrink-0"
+                                                                style={{ borderRadius: 'var(--radius-sm)', background: 'rgba(var(--success-rgb), 0.12)', color: 'var(--success)' }}
+                                                            >
+                                                                AUTO
+                                                            </span>
+                                                        )}
                                                         <span
                                                             className="w-1.5 h-5 rounded-full shrink-0"
                                                             style={{ background: dc, opacity: 0.5 }}
@@ -437,6 +449,57 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                         )
                                     })}
                                 </div>
+                            </div>
+
+                            {/* Execution Mode Toggle */}
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>Execution Mode</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setExecutionMode('agent')}
+                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
+                                        style={{
+                                            borderRadius: 'var(--radius-md)',
+                                            background: executionMode === 'agent' ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent',
+                                            border: `1px solid ${executionMode === 'agent' ? 'rgba(var(--primary-rgb), 0.3)' : 'var(--border)'}`,
+                                            color: executionMode === 'agent' ? 'var(--primary)' : 'var(--text-muted)',
+                                        }}
+                                        onMouseEnter={e => { if (executionMode !== 'agent') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
+                                        onMouseLeave={e => { if (executionMode !== 'agent') { (e.currentTarget).style.borderColor = 'var(--border)'; (e.currentTarget).style.background = 'transparent' } }}
+                                    >
+                                        <i className="fa-solid fa-brain text-[13px]"></i>
+                                        <div className="text-left">
+                                            <div className="text-[11px] font-semibold">Agent</div>
+                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>LLM-powered reasoning</div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setExecutionMode('pipeline')}
+                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
+                                        style={{
+                                            borderRadius: 'var(--radius-md)',
+                                            background: executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.1)' : 'transparent',
+                                            border: `1px solid ${executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.3)' : 'var(--border)'}`,
+                                            color: executionMode === 'pipeline' ? 'var(--success)' : 'var(--text-muted)',
+                                        }}
+                                        onMouseEnter={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
+                                        onMouseLeave={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border)'; (e.currentTarget).style.background = 'transparent' } }}
+                                    >
+                                        <i className="fa-solid fa-bolt text-[13px]"></i>
+                                        <div className="text-left">
+                                            <div className="text-[11px] font-semibold">Autopilot</div>
+                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>Zero tokens, predefined</div>
+                                        </div>
+                                    </button>
+                                </div>
+                                {executionMode === 'pipeline' && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-[10px]" style={{ color: 'var(--success)' }}>
+                                        <i className="fa-solid fa-leaf text-[9px]"></i>
+                                        No LLM required. Tools execute directly using template steps.
+                                    </div>
+                                )}
                             </div>
 
                             {/* Templates */}

@@ -2,7 +2,7 @@
 
 import json
 from src.backend.tools.web_search import web_search
-from src.backend.tools.read_webpage import read_webpage
+from src.backend.tools.read_webpage import read_webpage, scrape_page
 from src.backend.tools.send_email import send_email
 from src.backend.tools.generate_file import generate_file
 
@@ -88,6 +88,33 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "scrape_page",
+            "description": "Fetch a URL and extract content matching a CSS selector. Bypasses anti-bot systems. If no selector given, returns full page text.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The full URL to scrape."
+                    },
+                    "css_selector": {
+                        "type": "string",
+                        "description": "CSS selector to target specific elements (e.g. '.product', '#main-content', 'h1'). Leave empty for full page.",
+                        "default": ""
+                    },
+                    "max_chars": {
+                        "type": "integer",
+                        "description": "Maximum characters to return (default 12000).",
+                        "default": 12000
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "generate_file",
             "description": "Create a file in the outputs directory. Supports .md, .txt, .csv, .json, .html extensions.",
             "parameters": {
@@ -112,6 +139,7 @@ TOOL_SCHEMAS = [
 _EXECUTORS = {
     "web_search": web_search,
     "read_webpage": read_webpage,
+    "scrape_page": scrape_page,
     "send_email": send_email,
     "generate_file": generate_file,
 }

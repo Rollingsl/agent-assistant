@@ -15,6 +15,7 @@ export interface Task {
     budget: number;
     category: string;
     tokens_used: number;
+    execution_mode: string;  // 'agent' (LLM) or 'pipeline' (zero tokens)
 }
 
 export type View = 'dashboard' | 'integrations' | 'knowledge';
