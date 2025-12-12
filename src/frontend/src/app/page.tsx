@@ -3,6 +3,7 @@
 import Dashboard from '@/components/Dashboard';
 import Integrations from '@/components/Integrations';
 import Knowledge from '@/components/Knowledge';
+import Preferences from '@/components/Preferences';
 import Sidebar from '@/components/Sidebar';
 import { useState } from 'react';
 
@@ -18,7 +19,7 @@ export interface Task {
     execution_mode: string;  // 'agent' (LLM) or 'pipeline' (zero tokens)
 }
 
-export type View = 'dashboard' | 'integrations' | 'knowledge';
+export type View = 'dashboard' | 'integrations' | 'knowledge' | 'preferences';
 
 export default function SPA() {
     const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -37,6 +38,7 @@ export default function SPA() {
                 {currentView === 'dashboard' && <Dashboard activeTask={activeTask} setActiveTask={setActiveTask} />}
                 {currentView === 'integrations' && <Integrations />}
                 {currentView === 'knowledge' && <Knowledge />}
+                {currentView === 'preferences' && <Preferences />}
             </main>
         </div>
     );

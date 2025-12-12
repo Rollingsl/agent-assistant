@@ -263,49 +263,162 @@ function TimelineDot({ type, color }: { type: 'agent' | 'tool_call' | 'tool_resu
 
 
 /* ─────────────────────────────────────────
+   Markdown Preview Sheet
+───────────────────────────────────────── */
+function MarkdownPreview({ filename, onClose }: { filename: string; onClose: () => void }) {
+    const [content, setContent] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        setLoading(true)
+        fetch(`/api/outputs/${encodeURIComponent(filename)}/content`)
+            .then(r => r.json())
+            .then(d => { setContent(d.content || ''); setLoading(false) })
+            .catch(() => { setContent('Failed to load file content.'); setLoading(false) })
+    }, [filename])
+
+    return (
+        <>
+            {/* Backdrop */}
+            <div
+                className="fixed inset-0 z-[90]"
+                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                onClick={onClose}
+            />
+            {/* Sheet */}
+            <div
+                className="fixed top-0 right-0 bottom-0 z-[100] flex flex-col"
+                style={{
+                    width: 'min(900px, 90vw)',
+                    background: 'var(--bg)',
+                    borderLeft: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-lg)',
+                    animation: 'slideInFromRight 0.25s ease',
+                }}
+            >
+                {/* Header */}
+                <div className="shrink-0 px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)', background: 'var(--panel)' }}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <i className="fa-solid fa-file-lines text-[13px] shrink-0" style={{ color: 'var(--success)' }}></i>
+                        <span className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-main)' }}>{filename}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <a
+                            href={`/api/outputs/${encodeURIComponent(filename)}`}
+                            download
+                            className="w-8 h-8 flex items-center justify-center transition-all duration-200 no-underline"
+                            style={{ borderRadius: 'var(--radius-md)', color: 'var(--text-muted)' }}
+                            title="Download"
+                            onMouseEnter={e => { (e.currentTarget).style.background = 'var(--accent)'; (e.currentTarget).style.color = 'var(--text-main)' }}
+                            onMouseLeave={e => { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = 'var(--text-muted)' }}
+                        >
+                            <i className="fa-solid fa-download text-[12px]"></i>
+                        </a>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center transition-all duration-200"
+                            style={{ borderRadius: 'var(--radius-md)', color: 'var(--text-muted)' }}
+                            onMouseEnter={e => { (e.currentTarget).style.background = 'var(--accent)'; (e.currentTarget).style.color = 'var(--text-main)' }}
+                            onMouseLeave={e => { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = 'var(--text-muted)' }}
+                        >
+                            <i className="fa-solid fa-xmark text-[14px]"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto hide-scrollbar px-8 py-6">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16 gap-3" style={{ color: 'var(--text-muted)' }}>
+                            <i className="fa-solid fa-spinner fa-spin text-lg" style={{ color: 'var(--primary)' }}></i>
+                            <span className="text-[13px]">Loading preview...</span>
+                        </div>
+                    ) : (
+                        <div className="max-w-none agent-markdown">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content || ''}</ReactMarkdown>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    )
+}
+
+
+/* ─────────────────────────────────────────
    Generated Files
 ───────────────────────────────────────── */
-function GeneratedFiles() {
+function GeneratedFiles({ taskTitle }: { taskTitle: string }) {
     const [files, setFiles] = useState<OutputFile[]>([])
+    const [previewFile, setPreviewFile] = useState<string | null>(null)
+
+    // Build a safe-title slug matching the backend's naming convention
+    const safeTitle = taskTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
 
     useEffect(() => {
         fetch('/api/outputs').then(r => r.json()).then(d => { if (d.files) setFiles(d.files) }).catch(() => {})
     }, [])
 
-    if (files.length === 0) return null
+    // Only show files whose name contains the task's safe title
+    const taskFiles = safeTitle
+        ? files.filter(f => f.filename.toLowerCase().includes(safeTitle))
+        : files
+
+    if (taskFiles.length === 0) return null
+
+    const isPreviewable = (filename: string) => /\.(md|txt|csv|json|html)$/i.test(filename)
 
     return (
-        <div className="flex items-start gap-3 relative">
-            <TimelineDot type="tool_result" />
-            <div className="flex-1 pt-1">
-                <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--success)' }}>
-                    <i className="fa-solid fa-folder-open mr-1"></i> Generated Artifacts
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {files.map(f => (
-                        <a
-                            key={f.filename}
-                            href={`/api/outputs/${f.filename}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-2 transition-all duration-200 no-underline"
-                            style={{
-                                borderRadius: 'var(--radius-md)',
-                                background: 'var(--panel)',
-                                border: '1px solid var(--border)',
-                                color: 'var(--text-main)',
-                            }}
-                            onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(var(--success-rgb), 0.3)' }}
-                            onMouseLeave={e => { (e.currentTarget).style.borderColor = 'var(--border)' }}
-                        >
-                            <i className="fa-solid fa-file-lines text-[11px]" style={{ color: 'var(--success)' }}></i>
-                            <span className="text-[12px] font-medium">{f.filename}</span>
-                            <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{(f.size / 1024).toFixed(1)}KB</span>
-                        </a>
-                    ))}
+        <>
+            <div className="flex items-start gap-3 relative">
+                <TimelineDot type="tool_result" />
+                <div className="flex-1 pt-1">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--success)' }}>
+                        <i className="fa-solid fa-folder-open mr-1"></i> Generated Artifacts
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {taskFiles.map(f => (
+                            <div key={f.filename} className="flex items-center gap-0">
+                                <button
+                                    onClick={() => isPreviewable(f.filename) ? setPreviewFile(f.filename) : window.open(`/api/outputs/${f.filename}`, '_blank')}
+                                    className="flex items-center gap-2 px-3 py-2 transition-all duration-200 cursor-pointer"
+                                    style={{
+                                        borderRadius: 'var(--radius-md) 0 0 var(--radius-md)',
+                                        background: 'var(--panel)',
+                                        border: '1px solid var(--border)',
+                                        borderRight: 'none',
+                                        color: 'var(--text-main)',
+                                    }}
+                                    onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(var(--success-rgb), 0.3)' }}
+                                    onMouseLeave={e => { (e.currentTarget).style.borderColor = 'var(--border)' }}
+                                >
+                                    <i className="fa-solid fa-file-lines text-[11px]" style={{ color: 'var(--success)' }}></i>
+                                    <span className="text-[12px] font-medium">{f.filename}</span>
+                                    <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{(f.size / 1024).toFixed(1)}KB</span>
+                                </button>
+                                <a
+                                    href={`/api/outputs/${f.filename}`}
+                                    download
+                                    className="flex items-center justify-center px-2 py-2 transition-all duration-200 no-underline self-stretch"
+                                    style={{
+                                        borderRadius: '0 var(--radius-md) var(--radius-md) 0',
+                                        background: 'var(--panel)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-muted)',
+                                    }}
+                                    title="Download"
+                                    onMouseEnter={e => { (e.currentTarget).style.color = 'var(--success)'; (e.currentTarget).style.borderColor = 'rgba(var(--success-rgb), 0.3)' }}
+                                    onMouseLeave={e => { (e.currentTarget).style.color = 'var(--text-muted)'; (e.currentTarget).style.borderColor = 'var(--border)' }}
+                                >
+                                    <i className="fa-solid fa-download text-[10px]"></i>
+                                </a>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
-        </div>
+            {previewFile && <MarkdownPreview filename={previewFile} onClose={() => setPreviewFile(null)} />}
+        </>
     )
 }
 
@@ -625,7 +738,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                         )}
 
                         {/* Files panel */}
-                        {isComplete && <GeneratedFiles />}
+                        {isComplete && <GeneratedFiles taskTitle={liveTask.title} />}
 
                         <div ref={bottomRef} />
                     </div>

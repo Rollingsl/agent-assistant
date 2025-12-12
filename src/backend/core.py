@@ -1,6 +1,7 @@
 import os
 from litellm import completion
 from src.backend.tools.registry import TOOL_SCHEMAS
+from src.backend.database import get_user_preferences
 
 # ─── Knowledge base path ───
 KNOWLEDGE_PATH = os.path.join(
@@ -65,6 +66,31 @@ def _build_system_prompt(category: str = "custom") -> str:
         "Don't just describe what you would do — actually do it using your tools. "
         "When your task is complete, provide a clear final summary of what was accomplished."
     )
+
+    # Inject user preferences as context
+    try:
+        prefs = get_user_preferences()
+        context_lines = []
+        if prefs.get("full_name"):
+            context_lines.append(f"- Name: {prefs['full_name']}")
+        if prefs.get("email"):
+            context_lines.append(f"- Email: {prefs['email']}")
+        if prefs.get("language"):
+            context_lines.append(f"- Language: {prefs['language']}")
+        if prefs.get("company_name"):
+            context_lines.append(f"- Company: {prefs['company_name']}")
+        if prefs.get("industry"):
+            context_lines.append(f"- Industry: {prefs['industry']}")
+        if prefs.get("tone"):
+            context_lines.append(f"- Tone: {prefs['tone']}")
+        if prefs.get("target_audience"):
+            context_lines.append(f"- Audience: {prefs['target_audience']}")
+        if prefs.get("custom_instructions"):
+            context_lines.append(f"- Instructions: {prefs['custom_instructions']}")
+        if context_lines:
+            prompt += "\n\n## User Context\n" + "\n".join(context_lines)
+    except Exception:
+        pass  # Don't break prompt building if preferences fail
 
     kb = _read_knowledge()
     if kb:

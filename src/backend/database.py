@@ -133,3 +133,71 @@ def update_task_tokens(task_id: int, tokens_used: int):
     c.execute("UPDATE tasks SET tokens_used=? WHERE id=?", (tokens_used, task_id))
     conn.commit()
     conn.close()
+
+
+# ── User Preferences ──
+
+def _init_preferences_table():
+    """Create the user_preferences table if it doesn't exist."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS user_preferences (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        full_name TEXT DEFAULT '',
+        email TEXT DEFAULT '',
+        language TEXT DEFAULT 'English',
+        company_name TEXT DEFAULT '',
+        industry TEXT DEFAULT '',
+        tone TEXT DEFAULT 'professional',
+        target_audience TEXT DEFAULT '',
+        custom_instructions TEXT DEFAULT '',
+        updated_at TEXT
+    )''')
+    conn.commit()
+    conn.close()
+
+
+def get_user_preferences() -> dict:
+    """Get user preferences, auto-creating defaults if table/row is empty."""
+    _init_preferences_table()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM user_preferences WHERE id = 1")
+    row = c.fetchone()
+    if not row:
+        c.execute(
+            "INSERT INTO user_preferences (id, updated_at) VALUES (1, ?)",
+            (datetime.now().isoformat(),)
+        )
+        conn.commit()
+        c.execute("SELECT * FROM user_preferences WHERE id = 1")
+        row = c.fetchone()
+    conn.close()
+    d = dict(row)
+    d.pop("id", None)
+    return d
+
+
+def save_user_preferences(prefs: dict):
+    """Upsert user preferences (single row, id=1)."""
+    _init_preferences_table()
+    allowed = {
+        "full_name", "email", "language", "company_name",
+        "industry", "tone", "target_audience", "custom_instructions",
+    }
+    filtered = {k: v for k, v in prefs.items() if k in allowed}
+    filtered["updated_at"] = datetime.now().isoformat()
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    # Ensure row exists
+    c.execute("SELECT id FROM user_preferences WHERE id = 1")
+    if not c.fetchone():
+        c.execute("INSERT INTO user_preferences (id) VALUES (1)")
+
+    sets = ", ".join(f"{k}=?" for k in filtered)
+    vals = list(filtered.values())
+    c.execute(f"UPDATE user_preferences SET {sets} WHERE id = 1", vals)
+    conn.commit()
+    conn.close()

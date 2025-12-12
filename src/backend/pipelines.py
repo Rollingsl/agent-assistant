@@ -9,7 +9,20 @@ and task metadata via {title}, {description}.
 import json
 import re
 from src.backend.tools.registry import execute_tool, DANGEROUS_TOOLS
-from src.backend.database import add_message, update_task_status, save_agent_state
+from src.backend.database import add_message, update_task_status, save_agent_state, get_user_preferences
+
+# Language → DuckDuckGo region mapping
+LANGUAGE_REGION_MAP = {
+    "English": "us-en",
+    "Spanish": "es-es",
+    "French": "fr-fr",
+    "German": "de-de",
+    "Japanese": "jp-jp",
+    "Chinese": "cn-zh",
+    "Portuguese": "br-pt",
+    "Arabic": "xa-ar",
+    "Korean": "kr-kr",
+}
 
 # ─── Step Types ───
 # Each step is a dict: { "tool": str, "args": dict, "label": str }
@@ -100,9 +113,21 @@ def _extract_urls_from_search(search_output: str, max_urls: int = 3) -> list[str
     return unique[:max_urls]
 
 
-def _build_simple_report(title: str, sections: list[tuple[str, str]]) -> str:
+def _build_simple_report(title: str, sections: list[tuple[str, str]], prefs: dict | None = None) -> str:
     """Build a markdown report from labeled sections."""
     lines = [f"# {title}", ""]
+
+    # Add author/company context from preferences
+    if prefs:
+        meta_parts = []
+        if prefs.get("full_name"):
+            meta_parts.append(f"**Prepared by** {prefs['full_name']}")
+        if prefs.get("company_name"):
+            meta_parts.append(f"**Prepared for** {prefs['company_name']}")
+        if meta_parts:
+            lines.append(" | ".join(meta_parts))
+            lines.append("")
+
     for label, content in sections:
         if content and content.strip():
             lines.append(f"## {label}")
@@ -266,6 +291,14 @@ def run_pipeline(task: dict) -> None:
     description = task.get("description", "")
     safe_title = re.sub(r'[^a-zA-Z0-9]+', '-', title.lower()).strip('-')[:40]
 
+    # Load user preferences for personalization
+    try:
+        prefs = get_user_preferences()
+    except Exception:
+        prefs = {}
+
+    region = LANGUAGE_REGION_MAP.get(prefs.get("language", ""), "us-en")
+
     pipeline = get_pipeline(title)
     if not pipeline:
         add_message(task_id, "agent",
@@ -299,7 +332,13 @@ def run_pipeline(task: dict) -> None:
                     query=query, title=title, description=description[:200],
                     safe_title=safe_title, prev=prev_output[:500]
                 )
-                args = {"query": search_query, "max_results": 8}
+                # Add company context to search when relevant
+                company = prefs.get("company_name", "")
+                if company and company.lower() not in search_query.lower():
+                    industry = prefs.get("industry", "")
+                    if industry:
+                        search_query = f"{search_query} {industry}"
+                args = {"query": search_query, "max_results": 8, "region": region}
 
             elif tool_name == "read_webpage" and step.get("read_from_prev"):
                 # Read the top URLs found in previous search results
@@ -326,7 +365,7 @@ def run_pipeline(task: dict) -> None:
                 filename = step.get("filename_template", "report-{safe_title}.md").format(
                     safe_title=safe_title, title=title
                 )
-                report_content = _build_simple_report(title, step_outputs)
+                report_content = _build_simple_report(title, step_outputs, prefs)
 
                 # generate_file is a dangerous tool → needs HITL
                 if tool_name in DANGEROUS_TOOLS:

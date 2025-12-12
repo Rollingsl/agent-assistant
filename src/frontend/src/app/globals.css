@@ -245,7 +245,8 @@
   }
 
   /* ── Agent Markdown ── */
-  .agent-markdown p { margin-bottom: 0.6rem; line-height: 1.7; }
+  .agent-markdown { color: var(--text-main); }
+  .agent-markdown p { margin-bottom: 0.6rem; line-height: 1.7; color: var(--text-secondary); }
   .agent-markdown p:last-child { margin-bottom: 0; }
   .agent-markdown strong { color: var(--text-main); font-weight: 650; }
   .agent-markdown em { color: var(--text-secondary); }
@@ -354,6 +355,11 @@
 
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInFromRight {
+  from { opacity: 0; transform: translateX(100%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import uvicorn
 from pydantic import BaseModel
-from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status
+from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status, get_user_preferences, save_user_preferences
 from src.backend.worker import process_background_tasks
 from src.backend.tools.registry import execute_tool, DANGEROUS_TOOLS
 from src.backend.pipelines import get_available_pipelines
@@ -74,6 +74,16 @@ class ToolExecuteRequest(BaseModel):
 class ConfigUpdateRequest(BaseModel):
     # Dict of { ENV_KEY: "value" }. Empty string means "clear override".
     values: dict[str, str]
+
+class PreferencesRequest(BaseModel):
+    full_name: str = ''
+    email: str = ''
+    language: str = 'English'
+    company_name: str = ''
+    industry: str = ''
+    tone: str = 'professional'
+    target_audience: str = ''
+    custom_instructions: str = ''
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +198,16 @@ async def list_outputs():
             })
     return {"files": files}
 
+@app.get("/api/outputs/{filename}/content")
+async def get_output_file_content(filename: str):
+    """Return raw text content of a generated output file (for preview)."""
+    safe_name = os.path.basename(filename)
+    filepath = os.path.join(OUTPUTS_DIR, safe_name)
+    if not os.path.isfile(filepath):
+        return {"error": "File not found"}
+    with open(filepath, "r", encoding="utf-8") as f:
+        return {"content": f.read(), "filename": safe_name}
+
 @app.get("/api/outputs/{filename}")
 async def get_output_file(filename: str):
     """Download/serve a generated output file."""
@@ -227,6 +247,19 @@ async def get_knowledge():
         with open(KNOWLEDGE_PATH, "r", encoding="utf-8") as f:
             return {"content": f.read()}
     return {"content": ""}
+
+# ---------------------------------------------------------------------------
+# Preferences Endpoints
+# ---------------------------------------------------------------------------
+@app.get("/api/preferences")
+async def get_preferences():
+    return get_user_preferences()
+
+@app.post("/api/preferences")
+async def update_preferences(req: PreferencesRequest):
+    save_user_preferences(req.model_dump())
+    return {"success": True}
+
 
 @app.post("/api/knowledge")
 async def update_knowledge(req: KnowledgeUpdateRequest):

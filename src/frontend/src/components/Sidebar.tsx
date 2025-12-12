@@ -33,9 +33,10 @@ const THEMES = [
 ] as const
 
 const NAV_ITEMS = [
-    { key: 'dashboard',    icon: 'fa-bolt',    label: 'Missions' },
-    { key: 'integrations', icon: 'fa-plug',    label: 'Connect' },
-    { key: 'knowledge',    icon: 'fa-database', label: 'Memory' },
+    { key: 'dashboard',    icon: 'fa-bolt',      label: 'Missions' },
+    { key: 'integrations', icon: 'fa-plug',      label: 'Connect' },
+    { key: 'knowledge',    icon: 'fa-database',  label: 'Memory' },
+    { key: 'preferences',  icon: 'fa-user-gear', label: 'Profile' },
 ] as const
 
 const MISSION_TYPES = [
@@ -77,6 +78,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const [formTitle, setFormTitle] = useState('')
     const [formDescription, setFormDescription] = useState('')
     const [executionMode, setExecutionMode] = useState<'agent' | 'pipeline'>('agent')
+    const [completedOpen, setCompletedOpen] = useState(false)
 
     useEffect(() => {
         const t = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora'
@@ -138,6 +140,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const completedTasks = tasks.filter(t => t.status === 'completed')
     const categoryTemplates = TEMPLATES[selectedCategory] || []
     const domainColor = DOMAIN_COLORS[selectedCategory] || 'var(--primary)'
+    const isTemplateSelected = categoryTemplates.some(t => t.title === formTitle)
 
     return (
         <>
@@ -348,13 +351,31 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     </div>
                                 )}
 
-                                {/* Completed */}
+                                {/* Completed — collapsible */}
                                 {completedTasks.length > 0 && (
                                     <div className="mt-2">
-                                        <div className="px-2 py-1.5">
-                                            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Completed</span>
-                                        </div>
-                                        {completedTasks.map(t => {
+                                        <button
+                                            onClick={() => setCompletedOpen(v => !v)}
+                                            className="w-full px-2 py-1.5 flex items-center justify-between cursor-pointer transition-colors duration-150"
+                                            style={{ background: 'transparent', border: 'none' }}
+                                            onMouseEnter={e => (e.currentTarget).style.background = 'var(--accent)'}
+                                            onMouseLeave={e => (e.currentTarget).style.background = 'transparent'}
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                <i
+                                                    className={`fa-solid fa-chevron-right text-[8px] transition-transform duration-200`}
+                                                    style={{ color: 'var(--text-subtle)', transform: completedOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                                                ></i>
+                                                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Completed</span>
+                                            </span>
+                                            <span
+                                                className="text-[10px] font-bold px-1.5 py-0.5"
+                                                style={{ borderRadius: 'var(--radius-sm)', background: 'rgba(var(--success-rgb), 0.08)', color: 'var(--success)' }}
+                                            >
+                                                {completedTasks.length}
+                                            </span>
+                                        </button>
+                                        {completedOpen && completedTasks.map(t => {
                                             const isSelected = activeTask?.id === t.id
                                             return (
                                                 <div
@@ -476,21 +497,22 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setExecutionMode('pipeline')}
-                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
+                                        onClick={() => { if (isTemplateSelected) setExecutionMode('pipeline') }}
+                                        disabled={!isTemplateSelected}
+                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
                                         style={{
                                             borderRadius: 'var(--radius-md)',
                                             background: executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.1)' : 'transparent',
                                             border: `1px solid ${executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.3)' : 'var(--border)'}`,
                                             color: executionMode === 'pipeline' ? 'var(--success)' : 'var(--text-muted)',
                                         }}
-                                        onMouseEnter={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
+                                        onMouseEnter={e => { if (isTemplateSelected && executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
                                         onMouseLeave={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border)'; (e.currentTarget).style.background = 'transparent' } }}
                                     >
                                         <i className="fa-solid fa-bolt text-[13px]"></i>
                                         <div className="text-left">
                                             <div className="text-[11px] font-semibold">Autopilot</div>
-                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>Zero tokens, predefined</div>
+                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>{isTemplateSelected ? 'Zero tokens, predefined' : 'Select a template first'}</div>
                                         </div>
                                     </button>
                                 </div>
@@ -540,7 +562,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     required
                                     type="text"
                                     value={formTitle}
-                                    onChange={e => setFormTitle(e.target.value)}
+                                    onChange={e => { setFormTitle(e.target.value); if (executionMode === 'pipeline') setExecutionMode('agent') }}
                                     placeholder="What should OPAS accomplish?"
                                     className="w-full px-4 py-2.5 text-[13px] outline-none transition-all"
                                     style={{
