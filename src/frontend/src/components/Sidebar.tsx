@@ -78,7 +78,6 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const [formTitle, setFormTitle] = useState('')
     const [formDescription, setFormDescription] = useState('')
     const [executionMode, setExecutionMode] = useState<'agent' | 'pipeline'>('agent')
-    const [completedOpen, setCompletedOpen] = useState(false)
 
     useEffect(() => {
         const t = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | 'aurora'
@@ -230,16 +229,16 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
             </div>
 
             {/* ═══ Mission Panel ═══ */}
-            {panelOpen && (
-                <div
-                    className="h-full flex flex-col shrink-0 overflow-hidden"
-                    style={{
-                        width: 280,
-                        background: 'var(--panel)',
-                        borderRight: '1px solid var(--border)',
-                        animation: 'slideInRight 0.2s ease',
-                    }}
-                >
+            <div
+                className="h-full flex flex-col shrink-0 overflow-hidden transition-all duration-300 ease-in-out"
+                style={{
+                    width: panelOpen ? 280 : 0,
+                    minWidth: panelOpen ? 280 : 0,
+                    opacity: panelOpen ? 1 : 0,
+                    background: 'var(--panel)',
+                    borderRight: panelOpen ? '1px solid var(--border)' : 'none',
+                }}
+            >
                     {/* Panel header */}
                     <div className="px-5 py-4 flex items-center justify-between shrink-0">
                         <h2 className="text-[13px] font-bold" style={{ color: 'var(--text-main)' }}>
@@ -351,31 +350,13 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     </div>
                                 )}
 
-                                {/* Completed — collapsible */}
+                                {/* Completed */}
                                 {completedTasks.length > 0 && (
                                     <div className="mt-2">
-                                        <button
-                                            onClick={() => setCompletedOpen(v => !v)}
-                                            className="w-full px-2 py-1.5 flex items-center justify-between cursor-pointer transition-colors duration-150"
-                                            style={{ background: 'transparent', border: 'none' }}
-                                            onMouseEnter={e => (e.currentTarget).style.background = 'var(--accent)'}
-                                            onMouseLeave={e => (e.currentTarget).style.background = 'transparent'}
-                                        >
-                                            <span className="flex items-center gap-1.5">
-                                                <i
-                                                    className={`fa-solid fa-chevron-right text-[8px] transition-transform duration-200`}
-                                                    style={{ color: 'var(--text-subtle)', transform: completedOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                                                ></i>
-                                                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Completed</span>
-                                            </span>
-                                            <span
-                                                className="text-[10px] font-bold px-1.5 py-0.5"
-                                                style={{ borderRadius: 'var(--radius-sm)', background: 'rgba(var(--success-rgb), 0.08)', color: 'var(--success)' }}
-                                            >
-                                                {completedTasks.length}
-                                            </span>
-                                        </button>
-                                        {completedOpen && completedTasks.map(t => {
+                                        <div className="px-2 py-1.5">
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Completed</span>
+                                        </div>
+                                        {completedTasks.map(t => {
                                             const isSelected = activeTask?.id === t.id
                                             return (
                                                 <div
@@ -401,7 +382,6 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                         )}
                     </div>
                 </div>
-            )}
 
             {/* ═══ New Mission Modal ═══ */}
             {isModalOpen && (
