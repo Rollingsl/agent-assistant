@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import uvicorn
 from pydantic import BaseModel
-from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status, get_user_preferences, save_user_preferences
+from src.backend.database import init_db, add_task, get_tasks, get_messages, add_message, update_task_status, get_user_preferences, save_user_preferences, get_memories, delete_memory
 from src.backend.worker import process_background_tasks
 from src.backend.tools.registry import execute_tool, DANGEROUS_TOOLS
 from src.backend.pipelines import get_available_pipelines
@@ -266,6 +266,19 @@ async def update_knowledge(req: KnowledgeUpdateRequest):
     with open(KNOWLEDGE_PATH, "w", encoding="utf-8") as f:
         f.write(req.content)
     return {"success": True}
+
+
+# ---------------------------------------------------------------------------
+# Memories Endpoints (auto-extracted learnings)
+# ---------------------------------------------------------------------------
+@app.get("/api/memories")
+async def fetch_memories():
+    return {"memories": get_memories()}
+
+@app.delete("/api/memories/{memory_id}")
+async def remove_memory(memory_id: int):
+    deleted = delete_memory(memory_id)
+    return {"success": deleted}
 
 
 # ---------------------------------------------------------------------------

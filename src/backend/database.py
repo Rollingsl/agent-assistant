@@ -45,6 +45,15 @@ def init_db():
         except sqlite3.OperationalError:
             pass  # Column already exists
 
+    # Memories table for auto-extracted learnings
+    c.execute('''CREATE TABLE IF NOT EXISTS memories
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  task_id INTEGER,
+                  source TEXT DEFAULT 'agent',
+                  content TEXT,
+                  created_at TEXT)''')
+
+    conn.commit()
     conn.close()
 
 def add_task(title: str, description: str, deadline: str, budget: int, category: str = "custom", execution_mode: str = "agent"):
@@ -133,6 +142,56 @@ def update_task_tokens(task_id: int, tokens_used: int):
     c.execute("UPDATE tasks SET tokens_used=? WHERE id=?", (tokens_used, task_id))
     conn.commit()
     conn.close()
+
+
+# ── Memories (auto-extracted learnings) ──
+
+def add_memory(task_id: int, content: str, source: str = "agent"):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO memories (task_id, source, content, created_at) VALUES (?, ?, ?, ?)",
+        (task_id, source, content, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+def get_memories(limit: int = 50) -> list[dict]:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM memories ORDER BY id DESC LIMIT ?", (limit,))
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return rows
+
+def delete_memory(memory_id: int) -> bool:
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM memories WHERE id=?", (memory_id,))
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
+
+def get_recent_memories_for_prompt(max_chars: int = 2000) -> str:
+    """Return recent memories as bullet list, capped at max_chars."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT content FROM memories ORDER BY id DESC LIMIT 50")
+    rows = c.fetchall()
+    conn.close()
+
+    lines = []
+    total = 0
+    for row in rows:
+        line = f"- {row['content']}"
+        if total + len(line) + 1 > max_chars:
+            break
+        lines.append(line)
+        total += len(line) + 1
+    return "\n".join(lines)
 
 
 # ── User Preferences ──

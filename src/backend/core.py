@@ -1,7 +1,7 @@
 import os
 from litellm import completion
 from src.backend.tools.registry import TOOL_SCHEMAS
-from src.backend.database import get_user_preferences
+from src.backend.database import get_user_preferences, get_recent_memories_for_prompt
 
 # ─── Knowledge base path ───
 KNOWLEDGE_PATH = os.path.join(
@@ -95,6 +95,14 @@ def _build_system_prompt(category: str = "custom") -> str:
     kb = _read_knowledge()
     if kb:
         prompt += f"\n\n## Knowledge Base Constraints\n{kb}"
+
+    # Inject auto-extracted memories
+    try:
+        memory_text = get_recent_memories_for_prompt(max_chars=2000)
+        if memory_text:
+            prompt += f"\n\n## Agent Memory\n{memory_text}"
+    except Exception:
+        pass  # Don't break prompt building if memories fail
 
     return prompt
 

@@ -10,6 +10,7 @@ import json
 import re
 from src.backend.tools.registry import execute_tool, DANGEROUS_TOOLS
 from src.backend.database import add_message, update_task_status, save_agent_state, get_user_preferences
+from src.backend.memory import save_task_memories
 
 # Language → DuckDuckGo region mapping
 LANGUAGE_REGION_MAP = {
@@ -458,6 +459,7 @@ def run_pipeline(task: dict) -> None:
                 f"**Autopilot complete.** {len(steps)} steps executed. Zero LLM tokens used.",
                 msg_type="agent")
     update_task_status(task_id, "completed")
+    save_task_memories(task, source="pipeline")
 
 
 def resume_pipeline(task: dict) -> None:
@@ -493,3 +495,4 @@ def resume_pipeline(task: dict) -> None:
                 "**Autopilot complete.** Pipeline finished after approval. Zero LLM tokens used.",
                 msg_type="agent")
     update_task_status(task_id, "completed")
+    save_task_memories(task, source="pipeline")

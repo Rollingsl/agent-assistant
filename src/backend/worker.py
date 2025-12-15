@@ -7,6 +7,7 @@ from src.backend.database import (
 from src.backend.core import call_llm_with_tools, _build_system_prompt
 from src.backend.tools.registry import DANGEROUS_TOOLS, execute_tool, parse_tool_args
 from src.backend.pipelines import run_pipeline, resume_pipeline, get_pipeline
+from src.backend.memory import save_task_memories
 
 MAX_ITERATIONS = 15
 
@@ -156,6 +157,7 @@ def _run_agent_loop(task: dict):
 
     # Done
     update_task_status(task_id, "completed")
+    save_task_memories(task, source="agent")
     print(f"[WORKER] Task {task_id} completed. Tokens used: {total_tokens:,}")
 
 
@@ -308,6 +310,7 @@ def _resume_agent_loop(task: dict):
             })
 
     update_task_status(task_id, "completed")
+    save_task_memories(task, source="agent")
     print(f"[WORKER] Task {task_id} completed after resume. Tokens: {total_tokens:,}")
 
 
