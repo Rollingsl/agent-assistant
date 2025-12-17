@@ -245,7 +245,7 @@
   }
 
   /* ── Agent Markdown ── */
-  .agent-markdown { color: var(--text-main); }
+  .agent-markdown { color: var(--text-main); overflow-wrap: break-word; word-break: break-word; }
   .agent-markdown p { margin-bottom: 0.6rem; line-height: 1.7; color: var(--text-secondary); }
   .agent-markdown p:last-child { margin-bottom: 0; }
   .agent-markdown strong { color: var(--text-main); font-weight: 650; }
@@ -275,6 +275,7 @@
     font-size: 0.8rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
+    word-break: break-all;
   }
   .agent-markdown pre {
     background: var(--bg);
@@ -307,6 +308,8 @@
     border-collapse: collapse;
     margin-bottom: 0.75rem;
     font-size: 0.8125rem;
+    display: block;
+    overflow-x: auto;
   }
   .agent-markdown th {
     text-align: left;

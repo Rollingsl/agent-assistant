@@ -372,11 +372,11 @@ function GeneratedFiles({ taskTitle }: { taskTitle: string }) {
         <>
             <div className="flex items-start gap-3 relative">
                 <TimelineDot type="tool_result" />
-                <div className="flex-1 pt-1">
+                <div className="flex-1 min-w-0 pt-1">
                     <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--success)' }}>
                         <i className="fa-solid fa-folder-open mr-1"></i> Generated Artifacts
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 overflow-hidden">
                         {taskFiles.map(f => (
                             <div key={f.filename} className="flex items-center gap-0">
                                 <button
@@ -430,6 +430,8 @@ function TaskView({ activeTask }: { activeTask: Task }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [isApproving, setIsApproving] = useState(false)
     const [liveTask, setLiveTask] = useState<Task>(activeTask)
+    const [followUp, setFollowUp] = useState('')
+    const [isSending, setIsSending] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -469,6 +471,21 @@ function TaskView({ activeTask }: { activeTask: Task }) {
             await new Promise(r => setTimeout(r, 500))
         } catch (e) { console.error(e) }
         finally { setIsApproving(false) }
+    }
+
+    const sendFollowUp = async () => {
+        const text = followUp.trim()
+        if (!text || isSending) return
+        setIsSending(true)
+        try {
+            await fetch(`/api/tasks/${activeTask.id}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: text, is_approval: false }),
+            })
+            setFollowUp('')
+        } catch (e) { console.error(e) }
+        finally { setIsSending(false) }
     }
 
     const sc = STATUS_CONFIG[liveTask.status] ?? STATUS_CONFIG.queued
@@ -544,7 +561,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
             </div>
 
             {/* ── Message Stream (Timeline) ── */}
-            <div className="flex-1 overflow-y-auto hide-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar">
                 {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center gap-4">
                         <div
@@ -575,7 +592,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                                 return (
                                     <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
                                         <TimelineDot type="tool_call" />
-                                        <div className="flex-1 exec-block mt-0.5">
+                                        <div className="flex-1 min-w-0 exec-block mt-0.5">
                                             <div className="exec-block-header">
                                                 <i className="fa-solid fa-terminal text-[9px]" style={{ color: 'var(--primary)' }}></i>
                                                 <span style={{ color: 'var(--primary)' }}>Tool Call</span>
@@ -593,7 +610,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                                 return (
                                     <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
                                         <TimelineDot type="tool_result" />
-                                        <div className="flex-1 exec-block mt-0.5">
+                                        <div className="flex-1 min-w-0 exec-block mt-0.5">
                                             <div className="exec-block-header">
                                                 <i className="fa-solid fa-arrow-down text-[9px]" style={{ color: 'var(--success)' }}></i>
                                                 <span style={{ color: 'var(--success)' }}>Result</span>
@@ -611,7 +628,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                                 return (
                                     <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
                                         <TimelineDot type="user" />
-                                        <div className="flex-1 mt-0.5">
+                                        <div className="flex-1 min-w-0 mt-0.5">
                                             <span className="text-[10px] font-semibold" style={{ color: 'var(--primary)' }}>You</span>
                                             <div
                                                 className="mt-1 px-4 py-3 text-[13px] leading-relaxed"
@@ -633,7 +650,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                             return (
                                 <div key={m.id ?? i} className="flex items-start gap-3 relative" style={{ animation: `fadeInUp 0.25s ease ${Math.min(i * 0.03, 0.2)}s both` }}>
                                     <TimelineDot type={m.is_approval_request ? 'approval' : 'agent'} />
-                                    <div className="flex-1 mt-0.5">
+                                    <div className="flex-1 min-w-0 mt-0.5">
                                         <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>OPAS</span>
                                         <div
                                             className="mt-1 px-4 py-3 text-[13px] leading-relaxed"
@@ -644,7 +661,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                                                 color: 'var(--text-main)',
                                             }}
                                         >
-                                            <div className="prose prose-invert max-w-none agent-markdown">
+                                            <div className="prose prose-invert max-w-none agent-markdown overflow-hidden">
                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                                             </div>
 
@@ -697,7 +714,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                         {isRunning && messages.length > 0 && (
                             <div className="flex items-start gap-3 relative">
                                 <TimelineDot type="agent" />
-                                <div className="flex-1 mt-0.5">
+                                <div className="flex-1 min-w-0 mt-0.5">
                                     <div
                                         className="inline-flex items-center gap-1.5 px-4 py-3"
                                         style={{
@@ -743,6 +760,51 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                         <div ref={bottomRef} />
                     </div>
                 )}
+            </div>
+
+            {/* ── Follow-up Input ── */}
+            <div
+                className="shrink-0 px-8 py-3"
+                style={{ borderTop: '1px solid var(--border)', background: 'var(--panel)' }}
+            >
+                <div className="max-w-3xl mx-auto flex items-center gap-3">
+                    <input
+                        type="text"
+                        value={followUp}
+                        onChange={e => setFollowUp(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFollowUp() } }}
+                        placeholder="Ask a follow-up or request changes..."
+                        disabled={isSending}
+                        className="flex-1 min-w-0 px-4 py-2.5 text-[13px] outline-none transition-all"
+                        style={{
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--input-bg)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-main)',
+                        }}
+                        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.4)'; e.currentTarget.style.background = 'var(--input-bg-focus)' }}
+                        onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--input-bg)' }}
+                    />
+                    <button
+                        onClick={sendFollowUp}
+                        disabled={isSending || !followUp.trim()}
+                        className="shrink-0 flex items-center justify-center w-9 h-9 transition-all disabled:opacity-30"
+                        style={{
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--primary)',
+                            color: '#fff',
+                            border: 'none',
+                        }}
+                        onMouseEnter={e => { if (!isSending && followUp.trim()) (e.currentTarget).style.opacity = '0.85' }}
+                        onMouseLeave={e => { (e.currentTarget).style.opacity = '1' }}
+                        title="Send (Enter)"
+                    >
+                        {isSending
+                            ? <i className="fa-solid fa-spinner fa-spin text-[12px]"></i>
+                            : <i className="fa-solid fa-paper-plane text-[12px]"></i>
+                        }
+                    </button>
+                </div>
             </div>
         </div>
     )
