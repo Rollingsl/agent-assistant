@@ -117,7 +117,7 @@ export default function Preferences() {
             ) : (
                 <div className="flex-1 overflow-y-auto hide-scrollbar">
                     <div className="max-w-5xl mx-auto px-8 py-8">
-                        <div className="grid grid-cols-2 gap-8 items-start">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
                             {/* ── Left Column: Identity ── */}
                             <div

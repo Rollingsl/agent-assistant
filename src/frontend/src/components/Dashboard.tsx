@@ -561,7 +561,7 @@ function TaskView({ activeTask }: { activeTask: Task }) {
             </div>
 
             {/* ── Message Stream (Timeline) ── */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar">
+            <div className="group/stream relative flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar">
                 {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center gap-4">
                         <div
@@ -760,50 +760,54 @@ function TaskView({ activeTask }: { activeTask: Task }) {
                         <div ref={bottomRef} />
                     </div>
                 )}
-            </div>
-
-            {/* ── Follow-up Input ── */}
-            <div
-                className="shrink-0 px-8 py-3"
-                style={{ borderTop: '1px solid var(--border)', background: 'var(--panel)' }}
-            >
-                <div className="max-w-3xl mx-auto flex items-center gap-3">
-                    <input
-                        type="text"
-                        value={followUp}
-                        onChange={e => setFollowUp(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFollowUp() } }}
-                        placeholder="Ask a follow-up or request changes..."
-                        disabled={isSending}
-                        className="flex-1 min-w-0 px-4 py-2.5 text-[13px] outline-none transition-all"
-                        style={{
-                            borderRadius: 'var(--radius-md)',
-                            background: 'var(--input-bg)',
-                            border: '1px solid var(--border)',
-                            color: 'var(--text-main)',
-                        }}
-                        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.4)'; e.currentTarget.style.background = 'var(--input-bg-focus)' }}
-                        onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--input-bg)' }}
-                    />
-                    <button
-                        onClick={sendFollowUp}
-                        disabled={isSending || !followUp.trim()}
-                        className="shrink-0 flex items-center justify-center w-9 h-9 transition-all disabled:opacity-30"
-                        style={{
-                            borderRadius: 'var(--radius-md)',
-                            background: 'var(--primary)',
-                            color: '#fff',
-                            border: 'none',
-                        }}
-                        onMouseEnter={e => { if (!isSending && followUp.trim()) (e.currentTarget).style.opacity = '0.85' }}
-                        onMouseLeave={e => { (e.currentTarget).style.opacity = '1' }}
-                        title="Send (Enter)"
-                    >
-                        {isSending
-                            ? <i className="fa-solid fa-spinner fa-spin text-[12px]"></i>
-                            : <i className="fa-solid fa-paper-plane text-[12px]"></i>
-                        }
-                    </button>
+                {/* ── Floating Follow-up Input (hover-revealed) ── */}
+                <div
+                    className="sticky bottom-0 left-0 right-0 z-20 pointer-events-none opacity-0 translate-y-2 group-hover/stream:opacity-100 group-hover/stream:translate-y-0 focus-within:opacity-100 focus-within:translate-y-0 transition-all duration-300 ease-out"
+                    style={{ background: 'linear-gradient(transparent, var(--panel) 40%)' }}
+                >
+                    <div className="pointer-events-auto px-8 pb-4 pt-8">
+                        <div className="max-w-3xl mx-auto flex items-center gap-3 p-1.5"
+                            style={{
+                                borderRadius: 'var(--radius-lg)',
+                                background: 'var(--panel)',
+                                border: '1px solid var(--border)',
+                                boxShadow: 'none',
+                            }}
+                        >
+                            <input
+                                type="text"
+                                value={followUp}
+                                onChange={e => setFollowUp(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFollowUp() } }}
+                                placeholder="Ask a follow-up or request changes..."
+                                disabled={isSending}
+                                className="flex-1 min-w-0 px-3.5 py-2 text-[13px] outline-none"
+                                style={{
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-main)',
+                                }}
+                            />
+                            <button
+                                onClick={sendFollowUp}
+                                disabled={isSending || !followUp.trim()}
+                                className="shrink-0 flex items-center justify-center w-8 h-8 transition-all disabled:opacity-30"
+                                style={{
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'var(--primary)',
+                                    color: '#fff',
+                                    border: 'none',
+                                }}
+                                title="Send (Enter)"
+                            >
+                                {isSending
+                                    ? <i className="fa-solid fa-spinner fa-spin text-[11px]"></i>
+                                    : <i className="fa-solid fa-paper-plane text-[11px]"></i>
+                                }
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

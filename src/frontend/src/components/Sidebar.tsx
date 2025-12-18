@@ -71,7 +71,9 @@ const TEMPLATES: Record<string, { title: string; description: string }[]> = {
 export default function Sidebar({ currentView, setCurrentView, activeTask, setActiveTask }: SidebarProps) {
     const [tasks, setTasks] = useState<Task[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [panelOpen, setPanelOpen] = useState(true)
+    const [panelOpen, setPanelOpen] = useState(false)
+    const [panelHover, setPanelHover] = useState(false)
+    const showPanel = panelOpen || panelHover
     const [theme, setTheme] = useState<'dark' | 'light' | 'aurora'>('dark')
     const [submitting, setSubmitting] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<string>('custom')
@@ -142,7 +144,11 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
     const isTemplateSelected = categoryTemplates.some(t => t.title === formTitle)
 
     return (
-        <>
+        <div
+            className="relative h-full flex shrink-0 z-50"
+            onMouseEnter={() => setPanelHover(true)}
+            onMouseLeave={() => setPanelHover(false)}
+        >
             {/* ═══ Icon Rail ═══ */}
             <div
                 className="h-full flex flex-col items-center shrink-0 z-50"
@@ -189,19 +195,20 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                     })}
                 </nav>
 
-                {/* Panel toggle */}
+                {/* Panel pin toggle */}
                 <button
                     onClick={() => setPanelOpen(v => !v)}
-                    title={panelOpen ? 'Collapse panel' : 'Expand panel'}
+                    title={panelOpen ? 'Unpin panel' : 'Pin panel open'}
                     className="w-10 h-10 flex items-center justify-center mt-2 transition-all duration-200"
                     style={{
                         borderRadius: 'var(--radius-md)',
-                        color: 'var(--text-muted)',
+                        color: panelOpen ? 'var(--primary)' : 'var(--text-muted)',
+                        background: panelOpen ? 'var(--accent)' : 'transparent',
                     }}
-                    onMouseEnter={e => { (e.currentTarget).style.background = 'var(--accent)'; (e.currentTarget).style.color = 'var(--text-secondary)' }}
-                    onMouseLeave={e => { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = 'var(--text-muted)' }}
+                    onMouseEnter={e => { if (!panelOpen) { (e.currentTarget).style.background = 'var(--accent)'; (e.currentTarget).style.color = 'var(--text-secondary)' } }}
+                    onMouseLeave={e => { if (!panelOpen) { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = 'var(--text-muted)' } }}
                 >
-                    <i className={`fa-solid ${panelOpen ? 'fa-sidebar' : 'fa-bars'} text-[13px]`}></i>
+                    <i className={`fa-solid ${panelOpen ? 'fa-thumbtack' : 'fa-bars'} text-[13px]`}></i>
                 </button>
 
                 {/* Spacer */}
@@ -229,14 +236,22 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
             </div>
 
             {/* ═══ Mission Panel ═══ */}
+            {/* When pinned: normal flow (pushes main content). When hover-only: absolute overlay. */}
             <div
-                className="h-full flex flex-col shrink-0 overflow-hidden transition-all duration-300 ease-in-out"
+                className={`${panelOpen ? 'relative' : 'absolute top-0 bottom-0'} flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}
                 style={{
-                    width: panelOpen ? 280 : 0,
-                    minWidth: panelOpen ? 280 : 0,
-                    opacity: panelOpen ? 1 : 0,
+                    ...(panelOpen
+                        ? { width: 280, minWidth: 280 }
+                        : {
+                            left: 56,
+                            width: 280,
+                            transform: showPanel ? 'translateX(0)' : 'translateX(-100%)',
+                            opacity: showPanel ? 1 : 0,
+                            pointerEvents: showPanel ? 'auto' as const : 'none' as const,
+                            boxShadow: showPanel ? '4px 0 24px rgba(0,0,0,0.1)' : 'none',
+                        }),
                     background: 'var(--panel)',
-                    borderRight: panelOpen ? '1px solid var(--border)' : 'none',
+                    borderRight: '1px solid var(--border)',
                 }}
             >
                     {/* Panel header */}
@@ -636,6 +651,6 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                     </div>
                 </div>
             )}
-        </>
+        </div>
     )
 }
