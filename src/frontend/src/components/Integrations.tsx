@@ -110,7 +110,8 @@ export default function Integrations() {
                     <span className="text-[13px]">Loading...</span>
                 </div>
             ) : (
-                <div className="flex-1 overflow-hidden flex">
+                <div className="flex-1 overflow-hidden flex justify-center">
+                  <div className="flex w-full max-w-5xl">
 
                     {/* Service tabs */}
                     <div className="shrink-0 w-[190px] py-3 overflow-y-auto hide-scrollbar" style={{ borderRight: '1px solid var(--border)' }}>
@@ -241,6 +242,7 @@ export default function Integrations() {
                             </div>
                         </form>
                     </div>
+                  </div>
                 </div>
             )}
         </div>

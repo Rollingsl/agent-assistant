@@ -178,79 +178,84 @@ export default function Knowledge() {
             {tab === 'kb' ? (
                 /* ── Knowledge Base Editor ── */
                 <>
-                    <div className="flex-1 overflow-hidden flex min-h-0">
-                        {loading ? (
-                            <div className="flex-1 flex items-center justify-center gap-3" style={{ color: 'var(--text-muted)' }}>
-                                <i className="fa-solid fa-spinner fa-spin text-lg" style={{ color: 'var(--primary)' }}></i>
-                                <span className="text-[13px]">Loading...</span>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Line numbers */}
-                                <div
-                                    className="hidden md:flex flex-col overflow-hidden shrink-0 select-none pt-5 pb-5 w-12 text-right"
-                                    style={{
-                                        borderRight: '1px solid var(--border)',
-                                        fontFamily: 'var(--font-mono)',
-                                        fontSize: '12px',
-                                        lineHeight: '1.75rem',
-                                        color: 'var(--text-subtle)',
-                                    }}
-                                >
-                                    {Array.from({ length: Math.max(lines, 1) }, (_, i) => (
-                                        <div key={i} className="pr-3 leading-7 text-[11px]">{i + 1}</div>
-                                    ))}
+                    <div className="flex-1 overflow-hidden flex justify-center min-h-0">
+                      <div className="flex flex-col w-full max-w-5xl min-h-0">
+                        <div className="flex-1 overflow-hidden flex min-h-0">
+                            {loading ? (
+                                <div className="flex-1 flex items-center justify-center gap-3" style={{ color: 'var(--text-muted)' }}>
+                                    <i className="fa-solid fa-spinner fa-spin text-lg" style={{ color: 'var(--primary)' }}></i>
+                                    <span className="text-[13px]">Loading...</span>
                                 </div>
-
-                                {/* Textarea */}
-                                <div className="flex-1 relative overflow-hidden">
-                                    <textarea
-                                        ref={textareaRef}
-                                        value={content}
-                                        onChange={e => setContent(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        spellCheck={false}
-                                        placeholder="# Knowledge Base&#10;&#10;Write rules, constraints, and context here.&#10;This is injected into every agent prompt."
-                                        className="w-full h-full resize-none outline-none hide-scrollbar relative z-10"
+                            ) : (
+                                <>
+                                    {/* Line numbers */}
+                                    <div
+                                        className="hidden md:flex flex-col overflow-hidden shrink-0 select-none pt-5 pb-5 w-12 text-right"
                                         style={{
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'var(--text-main)',
+                                            borderRight: '1px solid var(--border)',
                                             fontFamily: 'var(--font-mono)',
-                                            fontSize: '13px',
+                                            fontSize: '12px',
                                             lineHeight: '1.75rem',
-                                            padding: '20px 28px',
-                                            caretColor: 'var(--primary)',
+                                            color: 'var(--text-subtle)',
                                         }}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
+                                    >
+                                        {Array.from({ length: Math.max(lines, 1) }, (_, i) => (
+                                            <div key={i} className="pr-3 leading-7 text-[11px]">{i + 1}</div>
+                                        ))}
+                                    </div>
 
-                    {/* Status bar */}
-                    <div
-                        className="shrink-0 flex items-center justify-between px-5 py-2"
-                        style={{
-                            borderTop: '1px solid var(--border)',
-                            fontSize: '10px',
-                            fontFamily: 'var(--font-mono)',
-                            color: 'var(--text-subtle)',
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="fa-solid fa-file-code text-[9px]"></i>
-                            <span>knowledge.md</span>
+                                    {/* Textarea */}
+                                    <div className="flex-1 relative overflow-hidden">
+                                        <textarea
+                                            ref={textareaRef}
+                                            value={content}
+                                            onChange={e => setContent(e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            spellCheck={false}
+                                            placeholder="# Knowledge Base&#10;&#10;Write rules, constraints, and context here.&#10;This is injected into every agent prompt."
+                                            className="w-full h-full resize-none outline-none hide-scrollbar relative z-10"
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: 'var(--text-main)',
+                                                fontFamily: 'var(--font-mono)',
+                                                fontSize: '13px',
+                                                lineHeight: '1.75rem',
+                                                padding: '20px 28px',
+                                                caretColor: 'var(--primary)',
+                                            }}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <div className="flex items-center gap-2">
-                            {savedOk && <span style={{ color: 'var(--success)' }}><i className="fa-solid fa-check mr-0.5"></i> Saved</span>}
-                            <span>Ctrl+S</span>
+
+                        {/* Status bar */}
+                        <div
+                            className="shrink-0 flex items-center justify-between px-5 py-2"
+                            style={{
+                                borderTop: '1px solid var(--border)',
+                                fontSize: '10px',
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--text-subtle)',
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="fa-solid fa-file-code text-[9px]"></i>
+                                <span>knowledge.md</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {savedOk && <span style={{ color: 'var(--success)' }}><i className="fa-solid fa-check mr-0.5"></i> Saved</span>}
+                                <span>Ctrl+S</span>
+                            </div>
                         </div>
+                      </div>
                     </div>
                 </>
             ) : (
                 /* ── Learned Memories Tab ── */
-                <div className="flex-1 overflow-auto min-h-0">
+                <div className="flex-1 overflow-auto min-h-0 flex justify-center">
+                <div className="w-full max-w-5xl">
                     {memoriesLoading ? (
                         <div className="flex items-center justify-center gap-3 py-20" style={{ color: 'var(--text-muted)' }}>
                             <i className="fa-solid fa-spinner fa-spin text-lg" style={{ color: 'var(--primary)' }}></i>
@@ -312,6 +317,7 @@ export default function Knowledge() {
                             ))}
                         </div>
                     )}
+                </div>
                 </div>
             )}
         </div>
