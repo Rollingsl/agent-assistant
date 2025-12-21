@@ -55,10 +55,22 @@ def main():
     print(f"{C.GREEN}[OK]{C.END} Python Backend modules are up to date.\n")
     
     # 2. Initialize Frontend dependencies
-    if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
-        print(f"{C.YELLOW}[SYSTEM]{C.END} Installing missing Next.js dependencies (this may take a minute)...")
+    node_modules_dir = os.path.join(frontend_dir, "node_modules")
+    package_json = os.path.join(frontend_dir, "package.json")
+    needs_install = not os.path.exists(node_modules_dir)
+
+    if not needs_install and os.path.exists(package_json):
+        pkg_mtime = os.path.getmtime(package_json)
+        nm_mtime = os.path.getmtime(node_modules_dir)
+        if pkg_mtime > nm_mtime:
+            needs_install = True
+
+    if needs_install:
+        print(f"{C.YELLOW}[SYSTEM]{C.END} Installing/updating Next.js dependencies (this may take a minute)...")
         subprocess.run("npm install", cwd=frontend_dir, shell=True, check=True)
         print(f"{C.GREEN}[OK]{C.END} Node modules installed.\n")
+    else:
+        print(f"{C.GREEN}[OK]{C.END} Frontend dependencies are up to date.\n")
     
     # 3. Start Python Backend (FastAPI + Worker)
     print(f"{C.CYAN}[SYSTEM]{C.END} Booting Python Engine {C.GREEN}(Background Service){C.END}...")
@@ -100,7 +112,6 @@ def main():
         print(f"\n\n{C.YELLOW}[INFO]{C.END} Graceful Shutdown Initiated (Ctrl-C).")
         backend_process.terminate()
         frontend_process.terminate()
-        sys.exit(0)
         sys.exit(0)
 
 if __name__ == "__main__":
