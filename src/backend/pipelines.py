@@ -302,10 +302,9 @@ def run_pipeline(task: dict) -> None:
 
     pipeline = get_pipeline(title)
     if not pipeline:
-        add_message(task_id, "agent",
-                    f"No pipeline found for template '{title}'. Use Agent mode for custom tasks.",
-                    msg_type="agent")
-        update_task_status(task_id, "completed")
+        # No hardcoded template — run smart pipeline for arbitrary tasks
+        from src.backend.smart_pipeline.engine import run_smart_pipeline
+        run_smart_pipeline(task)
         return
 
     steps = pipeline["steps"]

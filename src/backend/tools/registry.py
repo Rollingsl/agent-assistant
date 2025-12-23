@@ -5,6 +5,11 @@ from src.backend.tools.web_search import web_search
 from src.backend.tools.read_webpage import read_webpage, scrape_page
 from src.backend.tools.send_email import send_email
 from src.backend.tools.generate_file import generate_file
+from src.backend.tools.dns_lookup import dns_lookup, whois_lookup
+from src.backend.tools.wikipedia_lookup import wikipedia_summary, wikipedia_search
+from src.backend.tools.tech_detect import detect_tech_stack
+from src.backend.tools.social_finder import find_social_profiles
+from src.backend.tools.table_extract import extract_tables
 
 # ─── Tools that require HITL approval before execution ───
 DANGEROUS_TOOLS = {"send_email", "generate_file"}
@@ -133,6 +138,135 @@ TOOL_SCHEMAS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "dns_lookup",
+            "description": "Look up DNS records (A, MX, NS, TXT) for a domain.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "type": "string",
+                        "description": "The domain name to look up (e.g. 'example.com')."
+                    }
+                },
+                "required": ["domain"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "whois_lookup",
+            "description": "Look up WHOIS registration data for a domain: registrar, dates, nameservers.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "domain": {
+                        "type": "string",
+                        "description": "The domain name to look up (e.g. 'example.com')."
+                    }
+                },
+                "required": ["domain"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "wikipedia_summary",
+            "description": "Get a Wikipedia article summary for a topic.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The topic to look up on Wikipedia."
+                    }
+                },
+                "required": ["topic"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "wikipedia_search",
+            "description": "Search Wikipedia and return top matches with snippets.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The search query for Wikipedia."
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of results (default 5).",
+                        "default": 5
+                    }
+                },
+                "required": ["topic"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "detect_tech_stack",
+            "description": "Detect the technology stack of a website by analyzing its HTML and HTTP headers.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The URL to analyze (e.g. 'https://example.com')."
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_social_profiles",
+            "description": "Find social media profiles (LinkedIn, Twitter, GitHub, Crunchbase) for a person or company.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The person or company name to search for."
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "extract_tables",
+            "description": "Extract HTML tables from a webpage and convert them to markdown format.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The URL to extract tables from."
+                    },
+                    "max_tables": {
+                        "type": "integer",
+                        "description": "Maximum number of tables to extract (default 5).",
+                        "default": 5
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    },
 ]
 
 # ─── Executor map: function name → callable ───
@@ -142,6 +276,13 @@ _EXECUTORS = {
     "scrape_page": scrape_page,
     "send_email": send_email,
     "generate_file": generate_file,
+    "dns_lookup": dns_lookup,
+    "whois_lookup": whois_lookup,
+    "wikipedia_summary": wikipedia_summary,
+    "wikipedia_search": wikipedia_search,
+    "detect_tech_stack": detect_tech_stack,
+    "find_social_profiles": find_social_profiles,
+    "extract_tables": extract_tables,
 }
 
 

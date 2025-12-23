@@ -492,22 +492,21 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => { if (isTemplateSelected) setExecutionMode('pipeline') }}
-                                        disabled={!isTemplateSelected}
-                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        onClick={() => setExecutionMode('pipeline')}
+                                        className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
                                         style={{
                                             borderRadius: 'var(--radius-md)',
                                             background: executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.1)' : 'transparent',
                                             border: `1px solid ${executionMode === 'pipeline' ? 'rgba(var(--success-rgb), 0.3)' : 'var(--border)'}`,
                                             color: executionMode === 'pipeline' ? 'var(--success)' : 'var(--text-muted)',
                                         }}
-                                        onMouseEnter={e => { if (isTemplateSelected && executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
+                                        onMouseEnter={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border-hover)'; (e.currentTarget).style.background = 'var(--accent)' } }}
                                         onMouseLeave={e => { if (executionMode !== 'pipeline') { (e.currentTarget).style.borderColor = 'var(--border)'; (e.currentTarget).style.background = 'transparent' } }}
                                     >
                                         <i className="fa-solid fa-bolt text-[13px]"></i>
                                         <div className="text-left">
                                             <div className="text-[11px] font-semibold">Autopilot</div>
-                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>{isTemplateSelected ? 'Zero tokens, predefined' : 'Select a template first'}</div>
+                                            <div className="text-[9px]" style={{ color: 'var(--text-subtle)' }}>{isTemplateSelected ? 'Zero tokens, predefined' : 'Smart zero-token execution'}</div>
                                         </div>
                                     </button>
                                 </div>
@@ -557,7 +556,7 @@ export default function Sidebar({ currentView, setCurrentView, activeTask, setAc
                                     required
                                     type="text"
                                     value={formTitle}
-                                    onChange={e => { setFormTitle(e.target.value); if (executionMode === 'pipeline') setExecutionMode('agent') }}
+                                    onChange={e => setFormTitle(e.target.value)}
                                     placeholder="What should OPAS accomplish?"
                                     className="w-full px-4 py-2.5 text-[13px] outline-none transition-all"
                                     style={{
