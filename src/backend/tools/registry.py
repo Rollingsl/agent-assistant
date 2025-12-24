@@ -10,6 +10,7 @@ from src.backend.tools.wikipedia_lookup import wikipedia_summary, wikipedia_sear
 from src.backend.tools.tech_detect import detect_tech_stack
 from src.backend.tools.social_finder import find_social_profiles
 from src.backend.tools.table_extract import extract_tables
+from src.backend.tools.smart_reader import smart_read_page
 
 # ─── Tools that require HITL approval before execution ───
 DANGEROUS_TOOLS = {"send_email", "generate_file"}
@@ -267,6 +268,28 @@ TOOL_SCHEMAS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "smart_read_page",
+            "description": "Fetch a URL and extract structured content: metadata, clean paragraphs, and tables. Filters non-English pages. Best for research pipelines.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The full URL to fetch and read."
+                    },
+                    "max_chars": {
+                        "type": "integer",
+                        "description": "Maximum characters of content to return (default 8000).",
+                        "default": 8000
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    },
 ]
 
 # ─── Executor map: function name → callable ───
@@ -283,6 +306,7 @@ _EXECUTORS = {
     "detect_tech_stack": detect_tech_stack,
     "find_social_profiles": find_social_profiles,
     "extract_tables": extract_tables,
+    "smart_read_page": smart_read_page,
 }
 
 

@@ -27,7 +27,13 @@ DOMAIN_QUALITY = {
     "github.com": 2, "stackoverflow.com": 2,
     "crunchbase.com": 2, "linkedin.com": 2,
     "medium.com": 1, "dev.to": 1, "hackernews.com": 1,
+    "investopedia.com": 2, "yahoo.com": 1, "sec.gov": 3,
+    "pitchbook.com": 2, "glassdoor.com": 1, "docs.google.com": 1,
+    "mckinsey.com": 3, "statista.com": 2,
 }
+
+# Non-English TLDs — URLs with these are penalized unless user language matches
+NON_ENGLISH_TLDS = {".de", ".fr", ".cn", ".jp", ".kr", ".ru", ".br", ".it", ".es", ".nl", ".pl", ".cz", ".tw"}
 
 # Language → DuckDuckGo region mapping (imported from pipelines)
 LANGUAGE_REGION_MAP = {
@@ -73,8 +79,25 @@ def _score_url(url: str, analysis: TaskAnalysis) -> float:
     return score
 
 
-def _rank_urls(urls: list[str], analysis: TaskAnalysis, max_urls: int = 4) -> list[str]:
-    """Rank and select the best URLs to read."""
+def _is_non_english_url(url: str) -> bool:
+    """Check if URL has a non-English TLD."""
+    from urllib.parse import urlparse
+    try:
+        hostname = urlparse(url).hostname or ""
+        for tld in NON_ENGLISH_TLDS:
+            if hostname.endswith(tld):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _rank_urls(urls: list[str], analysis: TaskAnalysis, max_urls: int = 4, user_language: str = "English") -> list[str]:
+    """Rank and select the best URLs to read, filtering non-English domains."""
+    # Filter non-English TLDs unless user language is non-English
+    if user_language == "English":
+        urls = [u for u in urls if not _is_non_english_url(u)]
+
     scored = [(url, _score_url(url, analysis)) for url in urls]
     scored.sort(key=lambda x: x[1], reverse=True)
     return [url for url, _ in scored[:max_urls]]
@@ -177,7 +200,8 @@ def run_smart_pipeline(task: dict) -> None:
             seen_urls.add(u)
             unique_urls.append(u)
 
-    ranked_urls = _rank_urls(unique_urls, analysis, max_urls=4)
+    user_language = prefs.get("language", "English")
+    ranked_urls = _rank_urls(unique_urls, analysis, max_urls=4, user_language=user_language)
 
     add_message(task_id, "agent",
                 f"**Step {step_num}/{total_steps}:** Reading {len(ranked_urls)} top sources...",
@@ -186,9 +210,15 @@ def run_smart_pipeline(task: dict) -> None:
     content_items: list[tuple[str, str]] = []
 
     for url in ranked_urls:
-        add_message(task_id, "agent", f"`read_webpage({url})`", msg_type="tool_call")
+        add_message(task_id, "agent", f"`smart_read_page({url})`", msg_type="tool_call")
         try:
-            result = execute_tool("read_webpage", {"url": url, "max_chars": 6000})
+            result = execute_tool("smart_read_page", {"url": url, "max_chars": 8000})
+
+            # Skip non-English pages detected by smart_reader
+            if result.startswith("[SKIPPED]"):
+                add_message(task_id, "agent", result, msg_type="tool_result")
+                continue
+
             content_items.append((url, result))
 
             preview = result[:250] + "..." if len(result) > 250 else result

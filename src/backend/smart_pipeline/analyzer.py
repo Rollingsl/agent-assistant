@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 INTENT_PATTERNS: dict[str, list[tuple[str, float]]] = {
     "RESEARCH": [
-        (r"\bresearch\b", 3.0),
+        (r"\bresearch\b", 5.0),
         (r"\binvestigat[ei]", 2.5),
         (r"\banalyz[ei]", 2.0),
         (r"\bstudy\b", 2.0),
@@ -393,7 +393,25 @@ def analyze_task(title: str, description: str = "") -> TaskAnalysis:
     else:
         full_text = f"{title} {description}".strip()
 
-    intent, scores, confidence = classify_intent(full_text)
+    # Score title separately with 2x multiplier for stronger intent signal
+    _, title_scores, _ = classify_intent(title)
+    _, full_scores, _ = classify_intent(full_text)
+
+    # Combine: title gets 2x weight
+    scores: dict[str, float] = {}
+    all_intents = set(title_scores.keys()) | set(full_scores.keys())
+    for k in all_intents:
+        scores[k] = (title_scores.get(k, 0.0) * 2.0) + full_scores.get(k, 0.0)
+
+    if not any(scores.values()):
+        intent = "RESEARCH"
+        confidence = 0.1
+    else:
+        intent = max(scores, key=scores.get)  # type: ignore
+        best_score = scores[intent]
+        total_score = sum(scores.values())
+        confidence = min(best_score / total_score, 1.0) if total_score > 0 else 0.1
+
     entities = extract_entities(full_text)
     domains = extract_domains(full_text)
     urls = extract_urls(full_text)

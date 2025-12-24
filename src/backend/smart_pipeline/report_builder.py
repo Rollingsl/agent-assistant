@@ -61,8 +61,12 @@ def build_report(
         lines.append("")
 
     # Summary line
-    lines.append(f"> Smart pipeline analysis covering {synthesis.total_facts} extracted facts from {len(synthesis.sources)} sources.")
+    source_count = len([s for s in synthesis.sources if not s.startswith("search-")])
+    lines.append(f"> Smart pipeline analysis covering {synthesis.total_facts} extracted facts from {source_count} sources.")
     lines.append("")
+
+    # Structured metadata summary — surface JSON-LD data if present in any facts
+    _add_metadata_summary(lines, synthesis)
 
     # Main sections from synthesis
     ordered_sections = []
@@ -80,13 +84,17 @@ def build_report(
         if not facts:
             continue
 
+        # Cap "General" section to max 5 items
+        if section_name == "General":
+            facts = facts[:5]
+
         lines.append(f"## {section_name}")
         lines.append("")
 
         for fact in facts:
             # Format as bullet point with citation
             text = fact.text.rstrip(".")
-            if fact.source_url:
+            if fact.source_url and not fact.source_url.startswith("search-"):
                 # Add citation as markdown link
                 short_source = _shorten_url(fact.source_url)
                 lines.append(f"- {text}. *([source]({fact.source_url}))*")
@@ -116,11 +124,12 @@ def build_report(
             lines.append(f"- {tech}")
         lines.append("")
 
-    # Sources
-    if synthesis.sources:
+    # Sources (hide internal search-N references)
+    real_sources = [url for url in synthesis.sources if not url.startswith("search-")]
+    if real_sources:
         lines.append("## Sources")
         lines.append("")
-        for i, url in enumerate(synthesis.sources, 1):
+        for i, url in enumerate(real_sources, 1):
             lines.append(f"{i}. {url}")
         lines.append("")
 
@@ -129,6 +138,25 @@ def build_report(
     lines.append("*Generated automatically by OPAS Smart Pipeline (zero LLM tokens used)*")
 
     return "\n".join(lines)
+
+
+def _add_metadata_summary(lines: list[str], synthesis: SynthesisResult) -> None:
+    """Add structured metadata summary from extracted page metadata."""
+    import re
+    metadata_facts = []
+    for section_facts in synthesis.sections.values():
+        for fact in section_facts:
+            # Look for metadata markers from smart_read_page output
+            text = fact.text
+            if any(text.startswith(prefix) for prefix in ["**Title:**", "**Description:**", "**Name:**", "**Type:**", "**Structured Description:**"]):
+                metadata_facts.append(text)
+
+    if metadata_facts:
+        lines.append("## Key Information")
+        lines.append("")
+        for mf in metadata_facts[:5]:
+            lines.append(f"- {mf}")
+        lines.append("")
 
 
 def _shorten_url(url: str) -> str:

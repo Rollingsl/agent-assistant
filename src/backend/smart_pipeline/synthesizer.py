@@ -54,8 +54,35 @@ SECTION_SIGNALS: dict[str, list[str]] = {
 STATS_RE = re.compile(r'\d+(?:\.\d+)?(?:\s*[%$€£BMKbmk]|\s*(?:million|billion|thousand|percent))', re.IGNORECASE)
 
 
+def _is_non_english(text: str) -> bool:
+    """Return True if >30% of characters are non-ASCII (catches German/Chinese/Arabic text)."""
+    if not text:
+        return False
+    non_ascii = sum(1 for c in text if ord(c) > 127)
+    return (non_ascii / len(text)) > 0.30
+
+
+# Expanded noise patterns — forum signatures, review metadata, breadcrumbs, cookie banners
+NOISE_PATTERNS = [
+    r'^(cookie|accept|privacy|subscribe|sign up|log in|menu|nav)',
+    r'^(click here|read more|see also|related|share|tweet|pin)',
+    r'^\d+\s*(comments?|shares?|likes?|views?)',
+    # Forum signatures and review metadata
+    r'(?i)\bfazit\b',  # German "conclusion" in reviews
+    r'(?i)\bsag uns\b',  # German "tell us"
+    r'(?i)\bbewertung\b',  # German "rating"
+    r'\b\d+\s*von\s*\d+\s*(sternen?|punkte?)\b',  # "4 von 5 Sternen"
+    r'\b\d+(\.\d+)?\s*/\s*\d+\s*(stars?|rating)',  # "4.5/5 stars"
+    r'(?i)^(breadcrumb|home\s*[>»/])',  # breadcrumbs
+    r'(?i)(cookie\s*(policy|consent|banner|notice))',
+    r'(?i)^(posted by|submitted by|written by|author:|by\s+\w+\s*\|)',  # post metadata
+    r'(?i)(this site uses cookies|we use cookies|accept all cookies)',
+    r'(?i)^(previous|next|page \d|showing \d)',  # pagination
+]
+
+
 def _split_sentences(text: str) -> list[str]:
-    """Split text into sentences, filtering noise."""
+    """Split text into sentences, filtering noise and non-English content."""
     # Split on sentence boundaries
     raw = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
 
@@ -65,13 +92,11 @@ def _split_sentences(text: str) -> list[str]:
         # Filter out noise: too short, too long, or clearly navigation/boilerplate
         if len(s) < 20 or len(s) > 500:
             continue
-        # Skip cookie notices, navigation items, etc.
-        noise_patterns = [
-            r'^(cookie|accept|privacy|subscribe|sign up|log in|menu|nav)',
-            r'^(click here|read more|see also|related|share|tweet|pin)',
-            r'^\d+\s*(comments?|shares?|likes?|views?)',
-        ]
-        if any(re.match(p, s, re.IGNORECASE) for p in noise_patterns):
+        # Skip non-English text
+        if _is_non_english(s):
+            continue
+        # Skip noise patterns
+        if any(re.match(p, s, re.IGNORECASE) for p in NOISE_PATTERNS):
             continue
         sentences.append(s)
 
@@ -185,14 +210,39 @@ def synthesize(
     all_facts: list[ScoredFact] = []
     sources: list[str] = []
 
+    source_fact_counts: dict[str, int] = {}
+    max_facts_per_source = 8
+
     for source_url, content in content_items:
         if source_url and source_url not in sources:
             sources.append(source_url)
 
+        # Detect metadata section for bonus scoring
+        is_metadata_section = False
+
         sentences = _split_sentences(content)
         for sentence in sentences:
+            # Track metadata sections from smart_read_page output
+            if sentence.strip().startswith("## Metadata"):
+                is_metadata_section = True
+                continue
+            if sentence.strip().startswith("## Content") or sentence.strip().startswith("## Tables"):
+                is_metadata_section = False
+                continue
+
             score = _score_sentence(sentence, analysis)
-            if score > 0:  # Only keep relevant sentences
+
+            # Metadata boost: sentences from page metadata get +3.0
+            if is_metadata_section and score > 0:
+                score += 3.0
+
+            if score > 1.5:  # Require at least one entity mention
+                # Per-source cap
+                src_count = source_fact_counts.get(source_url, 0)
+                if src_count >= max_facts_per_source:
+                    continue
+                source_fact_counts[source_url] = src_count + 1
+
                 section = _assign_section(sentence)
                 all_facts.append(ScoredFact(
                     text=sentence,
