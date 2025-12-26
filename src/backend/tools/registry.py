@@ -272,7 +272,7 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "smart_read_page",
-            "description": "Fetch a URL and extract structured content: metadata, clean paragraphs, and tables. Filters non-English pages. Best for research pipelines.",
+            "description": "Fetch a URL and extract structured content: metadata, clean paragraphs, and tables. Filters pages not matching the user's preferred language. Best for research pipelines.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -284,6 +284,11 @@ TOOL_SCHEMAS = [
                         "type": "integer",
                         "description": "Maximum characters of content to return (default 8000).",
                         "default": 8000
+                    },
+                    "user_language": {
+                        "type": "string",
+                        "description": "User's preferred language (e.g., 'English', 'German', 'Spanish'). Pages not matching this language are skipped.",
+                        "default": "English"
                     }
                 },
                 "required": ["url"]

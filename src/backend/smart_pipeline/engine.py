@@ -35,6 +35,22 @@ DOMAIN_QUALITY = {
 # Non-English TLDs — URLs with these are penalized unless user language matches
 NON_ENGLISH_TLDS = {".de", ".fr", ".cn", ".jp", ".kr", ".ru", ".br", ".it", ".es", ".nl", ".pl", ".cz", ".tw"}
 
+# Language → TLDs that are acceptable for that language
+LANGUAGE_ALLOWED_TLDS: dict[str, set[str]] = {
+    "German": {".de"},
+    "French": {".fr"},
+    "Spanish": {".es"},
+    "Chinese": {".cn", ".tw"},
+    "Japanese": {".jp"},
+    "Korean": {".kr"},
+    "Portuguese": {".br"},
+    "Russian": {".ru"},
+    "Italian": {".it"},
+    "Dutch": {".nl"},
+    "Polish": {".pl"},
+    "Czech": {".cz"},
+}
+
 # Language → DuckDuckGo region mapping (imported from pipelines)
 LANGUAGE_REGION_MAP = {
     "English": "us-en", "Spanish": "es-es", "French": "fr-fr",
@@ -93,12 +109,23 @@ def _is_non_english_url(url: str) -> bool:
 
 
 def _rank_urls(urls: list[str], analysis: TaskAnalysis, max_urls: int = 4, user_language: str = "English") -> list[str]:
-    """Rank and select the best URLs to read, filtering non-English domains."""
-    # Filter non-English TLDs unless user language is non-English
-    if user_language == "English":
-        urls = [u for u in urls if not _is_non_english_url(u)]
+    """Rank and select the best URLs to read, filtering by user language preference."""
+    # Get TLDs allowed for this user's language (empty set = no foreign TLDs allowed)
+    allowed_tlds = LANGUAGE_ALLOWED_TLDS.get(user_language, set())
 
-    scored = [(url, _score_url(url, analysis)) for url in urls]
+    filtered = []
+    for u in urls:
+        if _is_non_english_url(u):
+            # Only keep foreign TLD if it matches user's language
+            from urllib.parse import urlparse
+            hostname = urlparse(u).hostname or ""
+            if any(hostname.endswith(tld) for tld in allowed_tlds):
+                filtered.append(u)
+            # else: skip this URL
+        else:
+            filtered.append(u)
+
+    scored = [(url, _score_url(url, analysis)) for url in filtered]
     scored.sort(key=lambda x: x[1], reverse=True)
     return [url for url, _ in scored[:max_urls]]
 
@@ -212,7 +239,7 @@ def run_smart_pipeline(task: dict) -> None:
     for url in ranked_urls:
         add_message(task_id, "agent", f"`smart_read_page({url})`", msg_type="tool_call")
         try:
-            result = execute_tool("smart_read_page", {"url": url, "max_chars": 8000})
+            result = execute_tool("smart_read_page", {"url": url, "max_chars": 8000, "user_language": user_language})
 
             # Skip non-English pages detected by smart_reader
             if result.startswith("[SKIPPED]"):
