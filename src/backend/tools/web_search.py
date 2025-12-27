@@ -1,9 +1,7 @@
 """DuckDuckGo web search tool — free, no API key required."""
 
-import warnings
 import time
-warnings.filterwarnings("ignore", message=".*renamed.*ddgs.*")
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 
 def web_search(query: str, max_results: int = 8, region: str = "us-en") -> str:

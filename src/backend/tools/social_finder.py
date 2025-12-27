@@ -1,8 +1,6 @@
 """Find social profiles via targeted DuckDuckGo queries."""
 
-import warnings
-warnings.filterwarnings("ignore", message=".*renamed.*ddgs.*")
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 import time
 
 
